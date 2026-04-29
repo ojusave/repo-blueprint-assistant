@@ -1,5 +1,9 @@
 /** Shared contracts for workflow results and inventory (no IO). */
 
+import type { PipelineTraceStep } from "../domain/workflowTrace.js";
+
+export type { PipelineTraceStep };
+
 export type RepoInput = {
   owner: string;
   repo: string;
@@ -38,6 +42,8 @@ export type AnalyzeResult =
       status: "existing_blueprint";
       blueprintPath: string;
       rawYaml: string;
+      /** Wall-clock steps inside this run (for UI waterfall). */
+      trace: PipelineTraceStep[];
     }
   | {
       status: "generated";
@@ -45,8 +51,10 @@ export type AnalyzeResult =
       yaml: string;
       validation: { ok: boolean; errors: string[] };
       notes?: string[];
+      trace: PipelineTraceStep[];
     }
   | {
       status: "error";
       message: string;
+      trace: PipelineTraceStep[];
     };

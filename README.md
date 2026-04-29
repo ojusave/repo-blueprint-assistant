@@ -20,7 +20,7 @@ Operators deploy the **web** service from Blueprint, then attach a **Workflow** 
 
 1. Open the deployed site.
 2. Enter `https://github.com/owner/repo` or `owner/repo`.
-3. Wait for polling to finish; copy YAML or use **Push render.yaml to new branch** when publishing is enabled (see **Publish scope** below).
+3. Wait for polling to finish. When the workflow completes, the UI shows a **Pipeline** timing strip (wall-clock per backend step inside `analyze_repository`, same steps as in the Render Dashboard trace). Copy YAML or use **Push render.yaml to new branch** when publishing is enabled (see **Publish scope** below).
 
 ## Publish scope
 

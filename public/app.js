@@ -52,10 +52,93 @@ function renderWorkflowPayload(results) {
       );
     }
     if (payload.status === "error") {
-      return JSON.stringify(payload, null, 2);
+      return JSON.stringify(
+        { status: payload.status, message: payload.message },
+        null,
+        2
+      );
     }
   }
   return JSON.stringify(results, null, 2);
+}
+
+/** Pull trace array from workflow result payload (set by analyze_repository). */
+function extractTrace(results) {
+  if (!Array.isArray(results) || results.length === 0) return null;
+  const p = results[0];
+  if (p && typeof p === "object" && Array.isArray(p.trace)) {
+    return p.trace;
+  }
+  return null;
+}
+
+function hidePipelineTrace() {
+  const el = document.getElementById("pipeline-trace");
+  if (!el) return;
+  el.classList.add("hidden");
+  el.replaceChildren();
+}
+
+/** Render backend step timings (waterfall-style bars). */
+function renderPipelineTrace(trace) {
+  const root = document.getElementById("pipeline-trace");
+  if (!root) return;
+
+  if (!Array.isArray(trace) || trace.length === 0) {
+    hidePipelineTrace();
+    return;
+  }
+
+  const totalMs = trace.reduce((s, step) => s + (Number(step.ms) || 0), 0);
+  const totalSec = totalMs > 0 ? (totalMs / 1000).toFixed(1) : "0";
+
+  root.replaceChildren();
+  root.classList.remove("hidden");
+
+  const head = document.createElement("div");
+  head.className = "pipeline-head";
+  const title = document.createElement("h3");
+  title.className = "pipeline-title";
+  title.textContent = "Pipeline";
+  const totalEl = document.createElement("span");
+  totalEl.className = "pipeline-total";
+  totalEl.textContent = `${totalSec}s total`;
+  head.append(title, totalEl);
+  root.append(head);
+
+  const rows = document.createElement("div");
+  rows.className = "trace-rows";
+
+  for (const step of trace) {
+    const ms = Number(step.ms) || 0;
+    const pct = totalMs > 0 ? Math.min(100, (ms / totalMs) * 100) : 0;
+    const label = typeof step.label === "string" ? step.label : String(step.id ?? "step");
+    const sec = (ms / 1000).toFixed(1);
+
+    const row = document.createElement("div");
+    row.className = "trace-row";
+
+    const name = document.createElement("div");
+    name.className = "trace-name";
+    name.textContent = label;
+    name.title = label;
+
+    const msEl = document.createElement("div");
+    msEl.className = "trace-ms";
+    msEl.textContent = `${sec}s`;
+
+    const bar = document.createElement("div");
+    bar.className = "trace-bar";
+    const fill = document.createElement("div");
+    fill.className = "trace-bar-fill";
+    fill.style.width = `${pct}%`;
+    bar.append(fill);
+
+    row.append(name, msEl, bar);
+    rows.append(row);
+  }
+
+  root.append(rows);
 }
 
 function prettifyStatus(raw) {
@@ -171,6 +254,7 @@ async function pollRun(runId) {
         ? ""
         : `(error: ${typeof wf.error === "object" ? JSON.stringify(wf.error) : wf.error})`;
     const jsonBlock = renderWorkflowPayload(wf.results);
+    renderPipelineTrace(extractTrace(wf.results));
 
     setWorkflowChrome(wf.status, errLine, `${wf.status}\n${jsonBlock}`, {
       showSpinner: shouldShowSpinner(wf.status),
@@ -216,6 +300,7 @@ document.getElementById("form")?.addEventListener("submit", async (ev) => {
   document.getElementById("yaml-out")?.classList.add("hidden");
   document.getElementById("yaml-heading")?.classList.add("hidden");
   document.getElementById("publish-panel")?.classList.add("hidden");
+  hidePipelineTrace();
   const pubResult = document.getElementById("publish-result");
   if (pubResult) {
     pubResult.textContent = "";

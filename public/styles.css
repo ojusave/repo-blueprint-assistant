@@ -364,6 +364,88 @@ code {
   display: none;
 }
 
+/* Backend pipeline waterfall (timings from workflow result.trace) */
+.pipeline-trace {
+  margin: 0 1.25rem 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.pipeline-trace.hidden {
+  display: none !important;
+}
+
+.pipeline-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.pipeline-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.pipeline-total {
+  font-size: 0.8125rem;
+  font-family: var(--font-mono);
+  color: var(--accent);
+}
+
+.trace-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.trace-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(72px, 28%);
+  gap: 0.65rem;
+  align-items: center;
+  font-size: 0.78rem;
+}
+
+.trace-name {
+  font-family: var(--font-mono);
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trace-ms {
+  font-family: var(--font-mono);
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.trace-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  align-self: center;
+}
+
+.trace-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #46eca9, #6366f1);
+  opacity: 0.92;
+  min-width: 4px;
+  transition: width 0.25s ease;
+}
+
 .yaml-title {
   margin: 0 1.25rem 0.5rem;
   font-size: 0.8125rem;
