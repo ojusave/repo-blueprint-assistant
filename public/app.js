@@ -17,7 +17,16 @@ function renderWorkflowPayload(results) {
   const payload = results[0];
   if (payload && typeof payload === "object") {
     if (payload.status === "existing_blueprint") {
-      return JSON.stringify(payload, null, 2);
+      if (payload.rawYaml) renderYaml(payload.rawYaml);
+      return JSON.stringify(
+        {
+          status: payload.status,
+          blueprintPath: payload.blueprintPath,
+          note: "This repo already has that file; we skip generation. Paste a repo without render.yaml to run fan-out and get a starter blueprint.",
+        },
+        null,
+        2
+      );
     }
     if (payload.status === "generated") {
       if (payload.yaml) renderYaml(payload.yaml);
