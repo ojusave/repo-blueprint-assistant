@@ -1,4 +1,6 @@
-# Blueprint: Web + Postgres. Workflow service: Dashboard (same repo), start `npm run workflow:start`.
+# Blueprint: Web + Postgres.
+# Workflow service: Dashboard → New → Workflow (not expressible in Blueprint yet). Same repo; root ".";
+# build `npm ci --include=dev && npm run build`; start `npm run workflow:start`. See README.
 # Preview envs require Render Pro; manual mode opts in per PR with [render preview]
 previews:
   generation: manual
