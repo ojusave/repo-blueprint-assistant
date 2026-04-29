@@ -2,8 +2,8 @@
  * Workflow process composition root: singleton GitHub port for task handlers.
  * Reset only in tests via resetGithubRepositoryForTests().
  */
-import type { GitHubRepository } from "../ports/github.repository.js";
-import { GitHubRestAdapter } from "./github.rest.js";
+import type { GitHubRepository } from "../ports/read-github-repo.js";
+import { GitHubRestAdapter } from "./github-http-read.js";
 
 let githubSingleton: GitHubRepository | null = null;
 

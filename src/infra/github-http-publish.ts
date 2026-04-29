@@ -1,10 +1,10 @@
 import { AppError } from "../domain/errors.js";
-import { GITHUB_REST_API_VERSION } from "./githubApiVersion.js";
+import { GITHUB_REST_API_VERSION } from "./github-api-version.js";
 import type {
   GitHubPublisher,
   PublishFileInput,
   PublishFileResult,
-} from "../ports/github.publisher.js";
+} from "../ports/publish-github-branch.js";
 
 const BASE = "https://api.github.com";
 

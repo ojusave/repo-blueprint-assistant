@@ -1,5 +1,5 @@
 import postgres from "postgres";
-import type { RunRecord, RunStore } from "../ports/run.store.js";
+import type { RunRecord, RunStore } from "../ports/analysis-run-store.js";
 
 export class PostgresRunStore implements RunStore {
   constructor(private readonly sql: ReturnType<typeof postgres>) {}

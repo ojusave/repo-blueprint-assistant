@@ -3,8 +3,8 @@ import { z } from "zod";
 import type { WebEnv } from "../../config/env.js";
 import { ok, fail } from "../../domain/apiEnvelope.js";
 import { AppError } from "../../domain/errors.js";
-import type { GitHubPublisher } from "../../ports/github.publisher.js";
-import type { GitHubRepository } from "../../ports/github.repository.js";
+import type { GitHubPublisher } from "../../ports/publish-github-branch.js";
+import type { GitHubRepository } from "../../ports/read-github-repo.js";
 import type { Logger } from "pino";
 
 const branchName = z

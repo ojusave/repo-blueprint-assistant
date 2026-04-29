@@ -1,6 +1,6 @@
 import { task } from "@renderinc/sdk/workflows";
-import { getGithubRepository } from "../../infra/registry.js";
-import type { PackageSlice, RepoInput, RepoSnapshot } from "../../contracts/analysis.js";
+import { getGithubRepository } from "../../infra/workflow-github-registry.js";
+import type { PackageSlice, RepoInput, RepoSnapshot } from "../../contracts/analyze-repository-types.js";
 
 type SliceInput = RepoInput &
   RepoSnapshot & {

@@ -3,11 +3,11 @@ import {
   mergeSlices,
   snapshotHints,
 } from "../../domain/mergeInventory.js";
-import type { AnalyzeResult, RepoInput } from "../../contracts/analysis.js";
+import type { AnalyzeResult, RepoInput } from "../../contracts/analyze-repository-types.js";
 import {
   runTraced,
   type PipelineTraceStep,
-} from "../../domain/workflowTrace.js";
+} from "../../domain/pipeline-step-timer.js";
 import { analyzePackageSlice } from "./analyze-package-slice.js";
 import { detectBlueprint } from "./detect-blueprint.js";
 import { fetchRepoSnapshot } from "./fetch-repo-snapshot.js";

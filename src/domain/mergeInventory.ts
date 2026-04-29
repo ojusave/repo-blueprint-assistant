@@ -1,4 +1,4 @@
-import type { MergedInventory, PackageSlice } from "../contracts/analysis.js";
+import type { MergedInventory, PackageSlice } from "../contracts/analyze-repository-types.js";
 
 /** Fan-in: combine per-root slices into one inventory for blueprint generation. */
 export function mergeSlices(

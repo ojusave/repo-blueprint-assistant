@@ -84,28 +84,35 @@ repo-blueprint-assistant/
     config/
       env.ts                # Zod-validated env (composition inputs)
     ports/
-      github.repository.ts  # Port: tree + file + default branch
-      workflow.trigger.ts   # Port: startTask, getTaskRun
-      run.store.ts          # Port: persist run rows
+      read-github-repo.ts           # Port: tree + file + default branch (read)
+      publish-github-branch.ts      # Port: push blueprint YAML to a branch (write)
+      render-workflow-client.ts     # Port: startTask, getTaskRun
+      analysis-run-store.ts        # Port: persist analysis run rows (Postgres)
     infra/
-      github.rest.ts        # Adapter: GitHub REST + timeouts
-      render.workflow.ts    # Adapter: @renderinc/sdk Render.workflows
-      postgres.run.store.ts # Adapter: RunStore via pg
-      registry.ts           # Composition root: singleton accessors for workflow process
+      github-http-read.ts           # Adapter: GitHub REST read + timeouts
+      github-http-publish.ts        # Adapter: GitHub REST branch + contents write
+      github-api-version.ts         # Shared REST API calendar version header
+      render-workflows-client.ts    # Adapter: @renderinc/sdk Render.workflows
+      postgres-analysis-runs.ts     # Adapter: RunStore via postgres.js
+      workflow-github-registry.ts   # Singleton GitHub reader for workflow worker only
     domain/
       mergeInventory.ts
       parseRepoUrl.ts
+      pipeline-step-timer.ts # Wall-clock steps for pipeline UI
       apiEnvelope.ts        # { ok, data?, error? }
+    contracts/
+      analyze-repository-types.ts  # AnalyzeResult + inventory shared by workflow + HTTP
     workflow/
       entry.ts              # Registers tasks
       tasks/
-        *.ts                # Tasks call ports via registry only
+        *.ts                # Tasks call ports via workflow-github-registry only
     app/
       server.ts             # Express composition root (web)
       routes/
         health.ts
         meta.ts
-        runs.ts
+        repo-analysis.routes.ts   # POST /api/runs, GET /api/runs/:id
+        publish-blueprint.routes.ts # POST /api/publish
       middleware/
         errorHandler.ts
     db/
@@ -113,12 +120,12 @@ repo-blueprint-assistant/
   public/
     index.html
     styles.css
-    api.ts                  # Single browser API client (template)
+    api.js                  # Browser fetch helper + app.js UI
   scripts/
     lint-staged optional
 ```
 
-**Cross-import rule:** `app/` and `workflow/` import **ports** through **infra/registry** or injected factories; **`infra/*` does not import `app/`**. Domain is pure (no IO).
+**Cross-import rule:** `app/` and `workflow/` import **ports** through **`workflow-github-registry`** (workflow only) or **constructor injection** (web); **`infra/*` does not import `app/`**. Domain is pure (no IO).
 
 ---
 

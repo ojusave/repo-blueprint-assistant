@@ -1,6 +1,6 @@
 import { ClientError, Render, ServerError } from "@renderinc/sdk";
 import { AppError } from "../domain/errors.js";
-import type { WorkflowTrigger } from "../ports/workflow.trigger.js";
+import type { WorkflowTrigger } from "../ports/render-workflow-client.js";
 
 /** SDK builds messages like `Failed to run task: ${error}`; plain objects become `[object Object]`. */
 function formatSdkWorkflowError(err: unknown): string {

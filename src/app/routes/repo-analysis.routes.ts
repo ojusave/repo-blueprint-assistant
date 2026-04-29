@@ -4,9 +4,9 @@ import type { WebEnv } from "../../config/env.js";
 import { ok, fail } from "../../domain/apiEnvelope.js";
 import { AppError } from "../../domain/errors.js";
 import { parseRepoInput } from "../../domain/parseRepoUrl.js";
-import type { GitHubRepository } from "../../ports/github.repository.js";
-import type { RunStore } from "../../ports/run.store.js";
-import type { WorkflowTrigger } from "../../ports/workflow.trigger.js";
+import type { GitHubRepository } from "../../ports/read-github-repo.js";
+import type { RunStore } from "../../ports/analysis-run-store.js";
+import type { WorkflowTrigger } from "../../ports/render-workflow-client.js";
 import type { Logger } from "pino";
 
 const bodySchema = z.object({

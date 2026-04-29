@@ -1,4 +1,4 @@
-import type { MergedInventory } from "../contracts/analysis.js";
+import type { MergedInventory } from "../contracts/analyze-repository-types.js";
 
 /** Reasonable Render defaults when package.json omits scripts (native Node buildpack). */
 export function defaultBuildCommand(inv: MergedInventory): string {

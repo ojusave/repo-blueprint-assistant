@@ -1,6 +1,6 @@
 import { AppError } from "../domain/errors.js";
-import type { GitHubRepository } from "../ports/github.repository.js";
-import { GITHUB_REST_API_VERSION } from "./githubApiVersion.js";
+import type { GitHubRepository } from "../ports/read-github-repo.js";
+import { GITHUB_REST_API_VERSION } from "./github-api-version.js";
 
 const BASE = "https://api.github.com";
 

@@ -1,5 +1,5 @@
 import { task } from "@renderinc/sdk/workflows";
-import type { MergedInventory } from "../../contracts/analysis.js";
+import type { MergedInventory } from "../../contracts/analyze-repository-types.js";
 import {
   defaultBuildCommand,
   defaultStartCommand,

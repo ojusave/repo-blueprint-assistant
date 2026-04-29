@@ -1,6 +1,6 @@
 /** Shared contracts for workflow results and inventory (no IO). */
 
-import type { PipelineTraceStep } from "../domain/workflowTrace.js";
+import type { PipelineTraceStep } from "../domain/pipeline-step-timer.js";
 
 export type { PipelineTraceStep };
 

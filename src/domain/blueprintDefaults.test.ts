@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defaultBuildCommand, defaultStartCommand } from "./blueprintDefaults.js";
-import type { MergedInventory } from "../contracts/analysis.js";
+import type { MergedInventory } from "../contracts/analyze-repository-types.js";
 
 function inv(p: Partial<MergedInventory>): MergedInventory {
   return {
