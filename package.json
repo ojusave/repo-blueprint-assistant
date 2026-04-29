@@ -23,7 +23,7 @@
     "express": "^4.21.2",
     "pino": "^9.6.0",
     "postgres": "^3.4.5",
-    "render-dds": "github:R4ph-t/DDS",
+    "render-dds": "git+https://github.com/R4ph-t/DDS.git#c00531cc3d95bcd7ce4c656dd692022779b30c37",
     "yaml": "^2.7.0",
     "zod": "^3.24.1"
   },
