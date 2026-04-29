@@ -53,7 +53,11 @@ async function pollRun(runId) {
   for (let i = 0; i < 120; i++) {
     const data = await getRun(runId);
     const wf = data.workflow;
-    const line = `${wf.status}\n${wf.error ? `error: ${wf.error}\n` : ""}`;
+    const errLine =
+      wf.error == null
+        ? ""
+        : `error: ${typeof wf.error === "object" ? JSON.stringify(wf.error) : wf.error}\n`;
+    const line = `${wf.status}\n${errLine}`;
     if (statusEl) {
       statusEl.textContent =
         line + "\n" + renderWorkflowPayload(wf.results);
