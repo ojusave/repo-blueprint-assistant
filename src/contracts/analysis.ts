@@ -1,0 +1,48 @@
+/** Shared contracts for workflow results and inventory (no IO). */
+
+export type RepoInput = {
+  owner: string;
+  repo: string;
+  ref: string;
+};
+
+export type RepoSnapshot = {
+  sha: string;
+  paths: string[];
+};
+
+export type PackageSlice = {
+  rootPath: string;
+  name?: string;
+  scripts?: { build?: string; start?: string };
+  hasDockerfile: boolean;
+  skipped?: boolean;
+  warning?: string;
+};
+
+export type MergedInventory = {
+  runtime: "node" | "python" | "unknown";
+  hasPackageJson: boolean;
+  hasDockerfile: boolean;
+  scripts?: { build?: string; start?: string };
+  warnings: string[];
+  slices: PackageSlice[];
+};
+
+export type AnalyzeResult =
+  | {
+      status: "existing_blueprint";
+      blueprintPath: string;
+      rawYaml: string;
+    }
+  | {
+      status: "generated";
+      inventory: MergedInventory;
+      yaml: string;
+      validation: { ok: boolean; errors: string[] };
+      notes?: string[];
+    }
+  | {
+      status: "error";
+      message: string;
+    };

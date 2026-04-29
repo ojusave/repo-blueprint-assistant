@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Repo Blueprint Assistant</title>
+    <link rel="icon" href="https://render.com/favicon.ico" />
+    <link rel="stylesheet" href="/dds/styles/globals.css" />
+    <link rel="stylesheet" href="/dds/styles/theme.css" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand">Repo Blueprint Assistant</div>
+      <nav class="nav">
+        <a
+          id="link-github"
+          href="https://github.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          >GitHub repository</a
+        >
+        <a
+          id="link-signup-nav"
+          href="https://dashboard.render.com/register"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Sign up on Render</a
+        >
+        <a href="https://render.com/docs" target="_blank" rel="noopener noreferrer"
+          >Docs</a
+        >
+      </nav>
+    </header>
+
+    <main class="main">
+      <section class="hero">
+        <h1>Public repo → Render blueprint</h1>
+        <p class="lede">
+          Paste a public GitHub repository. We scan it with Render Workflows (fan-out over
+          package roots), detect an existing <code>render.yaml</code>, or generate a starter
+          blueprint.
+        </p>
+        <div class="cta-row">
+          <a
+            id="link-signup-hero"
+            href="https://dashboard.render.com/register"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-primary"
+            >Sign up on Render</a
+          >
+          <a
+            href="https://render.com/docs/deploy-to-render-button"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              src="https://render.com/images/deploy-to-render-button.svg"
+              alt="Deploy to Render"
+              height="36"
+            />
+          </a>
+        </div>
+
+        <form id="form" class="form">
+          <label for="repoUrl">Public GitHub repo</label>
+          <input
+            id="repoUrl"
+            name="repoUrl"
+            type="text"
+            placeholder="https://github.com/owner/repo or owner/repo"
+            autocomplete="off"
+            required
+          />
+          <button type="submit" class="btn btn-primary">Analyze</button>
+        </form>
+      </section>
+
+      <section id="panel" class="panel hidden" aria-live="polite">
+        <h2>Run status</h2>
+        <pre id="status" class="mono"></pre>
+        <h3 id="yaml-heading" class="hidden">render.yaml</h3>
+        <pre id="yaml-out" class="mono yaml hidden"></pre>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <a
+        id="link-signup-footer"
+        href="https://dashboard.render.com/register"
+        target="_blank"
+        rel="noopener noreferrer"
+        >Sign up on Render</a
+      >
+      <span class="sep">·</span>
+      <a href="https://render.com/" target="_blank" rel="noopener noreferrer">render.com</a>
+      <span class="sep">·</span>
+      <a id="link-github-footer" href="https://github.com/" target="_blank" rel="noopener noreferrer">Source</a>
+    </footer>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

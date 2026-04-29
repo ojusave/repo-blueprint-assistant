@@ -1,0 +1,36 @@
+# Blueprint: Web + Postgres. Workflow service: Dashboard (same repo), start `npm run workflow:start`.
+# Preview envs require Render Pro; manual mode opts in per PR with [render preview]
+previews:
+  generation: manual
+
+databases:
+  - name: blueprint-assistant-db
+    plan: basic-256mb
+
+services:
+  - type: web
+    name: blueprint-assistant-web
+    runtime: node
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    previews:
+      plan: starter
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: blueprint-assistant-db
+          property: connectionString
+      - key: RENDER_API_KEY
+        sync: false
+      - key: WORKFLOW_SLUG
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: PUBLIC_GITHUB_REPO
+        sync: false
+      - key: ANALYSIS_ENABLED
+        value: "true"

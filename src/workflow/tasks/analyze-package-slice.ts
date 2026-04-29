@@ -1,0 +1,75 @@
+import { task } from "@renderinc/sdk/workflows";
+import { getGithubRepository } from "../../infra/registry.js";
+import type { PackageSlice, RepoInput, RepoSnapshot } from "../../contracts/analysis.js";
+
+type SliceInput = RepoInput &
+  RepoSnapshot & {
+    rootPath: string;
+  };
+
+export const analyzePackageSlice = task(
+  {
+    name: "analyze_package_slice",
+    plan: "standard",
+    timeoutSeconds: 120,
+    retry: {
+      maxRetries: 2,
+      waitDurationMs: 3000,
+      backoffScaling: 2,
+    },
+  },
+  async function analyzePackageSliceTask(input: SliceInput): Promise<PackageSlice> {
+    const pkgPath =
+      input.rootPath === "." ? "package.json" : `${input.rootPath}/package.json`;
+    if (!input.paths.includes(pkgPath)) {
+      return {
+        rootPath: input.rootPath,
+        hasDockerfile: false,
+        skipped: true,
+        warning: `No ${pkgPath} in tree`,
+      };
+    }
+    const gh = getGithubRepository();
+    let name: string | undefined;
+    let scripts: { build?: string; start?: string } | undefined;
+    try {
+      const raw = await gh.fetchFile(
+        input.owner,
+        input.repo,
+        pkgPath,
+        input.ref
+      );
+      const pkg = JSON.parse(raw) as {
+        name?: string;
+        scripts?: { build?: string; start?: string };
+      };
+      name = pkg.name;
+      scripts = {
+        build: pkg.scripts?.build,
+        start: pkg.scripts?.start,
+      };
+    } catch (e) {
+      return {
+        rootPath: input.rootPath,
+        hasDockerfile: false,
+        skipped: true,
+        warning: `Parse error for ${pkgPath}: ${
+          e instanceof Error ? e.message : String(e)
+        }`,
+      };
+    }
+
+    const dockerFilePath =
+      input.rootPath === "."
+        ? "Dockerfile"
+        : `${input.rootPath}/Dockerfile`;
+    const hasDockerfile = input.paths.includes(dockerFilePath);
+
+    return {
+      rootPath: input.rootPath,
+      name,
+      scripts,
+      hasDockerfile,
+    };
+  }
+);
