@@ -52,7 +52,7 @@ Content-Type: application/json
 
    ```bash
    render login
-   render workspace set   # pick target workspace
+   render workspace set cascadiajs   # workspace name or ID (see: render workspaces -o json)
    render workflows create \
      --name repo-blueprint-assistant-wf \
      --repo https://github.com/ojusave/repo-blueprint-assistant \
@@ -63,6 +63,8 @@ Content-Type: application/json
      --region oregon \
      --confirm -o json
    ```
+
+   Shortcut after login: `RENDER_WORKSPACE=cascadiajs npm run workflow:render:create` (runs [`scripts/create-workflow-on-render.sh`](scripts/create-workflow-on-render.sh)).
 
    Note: **`render services create --type …` does not include Workflow** (only `web_service`, `private_service`, `background_worker`, `static_site`, `cron_job`). Use **`render workflows create`**, not `services create`.
 
