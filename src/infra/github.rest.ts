@@ -1,5 +1,6 @@
 import { AppError } from "../domain/errors.js";
 import type { GitHubRepository } from "../ports/github.repository.js";
+import { GITHUB_REST_API_VERSION } from "./githubApiVersion.js";
 
 const BASE = "https://api.github.com";
 
@@ -14,7 +15,7 @@ export class GitHubRestAdapter implements GitHubRepository {
   private headers(): Record<string, string> {
     const h: Record<string, string> = {
       Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
+      "X-GitHub-Api-Version": GITHUB_REST_API_VERSION,
     };
     if (this.opts.token) {
       h.Authorization = `Bearer ${this.opts.token}`;

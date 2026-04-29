@@ -1,4 +1,5 @@
 import { AppError } from "../domain/errors.js";
+import { GITHUB_REST_API_VERSION } from "./githubApiVersion.js";
 import type {
   GitHubPublisher,
   PublishFileInput,
@@ -54,7 +55,7 @@ export class GitHubPublishRestAdapter implements GitHubPublisher {
   private headers(): Record<string, string> {
     return {
       Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
+      "X-GitHub-Api-Version": GITHUB_REST_API_VERSION,
       Authorization: `Bearer ${this.opts.token}`,
     };
   }

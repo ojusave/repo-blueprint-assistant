@@ -117,6 +117,7 @@ Confirm **`analyze_repository`** appears (alongside other tasks). The web app ca
 | `RENDER_USE_LOCAL_DEV` | Web | Set to `true` to point the SDK at the local CLI workflow server |
 | `RENDER_LOCAL_DEV_URL` | Web | Defaults to `http://localhost:8120` (see `render workflows dev` port) |
 | `RENDER_API_URL` | Web | Optional override for `https://api.render.com` (advanced; not the local workflow port) |
+| `GITHUB_REST_API_VERSION` | Both | Optional. GitHub REST calendar version header (default **`2026-03-10`**; see [API versions](https://docs.github.com/rest/about-the-rest-api/api-versions)). |
 | `GITHUB_HTTP_TIMEOUT_MS` | Both | Default `15000` |
 | `LOG_LEVEL` | Web | Pino level |
 
