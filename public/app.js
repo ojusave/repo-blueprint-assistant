@@ -308,7 +308,8 @@ document.getElementById("form")?.addEventListener("submit", async (ev) => {
   }
   const badgeEl = document.getElementById("status-badge");
   if (badgeEl) badgeEl.hidden = true;
-  document.getElementById("status-hint")?.textContent = "";
+  const hintClear = document.getElementById("status-hint");
+  if (hintClear) hintClear.textContent = "";
   document.getElementById("status-spinner")?.classList.add("hidden");
 
   const statusEl = document.getElementById("status");
@@ -335,8 +336,10 @@ document.getElementById("form")?.addEventListener("submit", async (ev) => {
       badgeEl.className = "badge badge-bad";
       badgeEl.textContent = "Error";
     }
-    document.getElementById("status-hint")?.textContent =
-      "Could not start or poll the workflow.";
+    const hintErr = document.getElementById("status-hint");
+    if (hintErr) {
+      hintErr.textContent = "Could not start or poll the workflow.";
+    }
     if (statusEl) {
       statusEl.textContent = e instanceof Error ? e.message : String(e);
     }
