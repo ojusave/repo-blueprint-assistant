@@ -11,6 +11,7 @@
     "workflow:build": "npm ci --include=dev && npm run build",
     "start": "node dist/app/server.js",
     "workflow:start": "node dist/workflow/entry.js",
+    "workflow:render:create": "bash scripts/create-workflow-on-render.sh",
     "workflow:dev": "tsx watch src/workflow/entry.ts",
     "dev": "tsx watch src/app/server.ts",
     "test": "vitest run",
