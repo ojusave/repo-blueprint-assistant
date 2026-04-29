@@ -158,8 +158,9 @@ function badgeForStatus(raw) {
   if (["canceled", "cancelled"].includes(s)) {
     return { cls: "badge-idle", label: "Canceled" };
   }
+  // API may report "paused" briefly or while results finalize; keep polling — do not treat as terminal success/failure.
   if (s === "paused") {
-    return { cls: "badge-paused", label: "Paused" };
+    return { cls: "badge-running", label: "Working…" };
   }
   if (["running", "in_progress", "pending", "queued"].includes(s)) {
     return { cls: "badge-running", label: prettifyStatus(raw) };
@@ -170,7 +171,7 @@ function badgeForStatus(raw) {
 function hintForStatus(raw) {
   const s = String(raw || "").toLowerCase();
   if (s === "paused") {
-    return "This run is paused in Render. Open the workflow run in the Dashboard to see whether it can be resumed or why it stopped.";
+    return "Workflow reported a paused state while finishing; results usually arrive shortly. Still polling…";
   }
   if (["running", "in_progress", "pending", "queued"].includes(s)) {
     return "Workflow is executing. Fan-out over package roots can take several minutes.";
@@ -223,12 +224,17 @@ function maybeShowPublishPanel() {
 }
 
 function isTerminalWorkflowStatus(wf) {
+  const r = wf?.results;
+  // Stop once output exists even if status string lags (e.g. paused → succeeded).
+  if (Array.isArray(r) && r.length > 0) return true;
   const s = String(wf.status || "").toLowerCase();
+  // Do not treat "paused" as terminal: Render may use it before succeeded/completed and results are attached.
   return (
-    s === "paused" ||
     s === "succeeded" ||
     s === "completed" ||
+    s === "success" ||
     s === "failed" ||
+    s === "failure" ||
     s === "canceled" ||
     s === "cancelled"
   );
@@ -236,7 +242,7 @@ function isTerminalWorkflowStatus(wf) {
 
 function shouldShowSpinner(statusRaw) {
   const s = String(statusRaw || "").toLowerCase();
-  return ["running", "in_progress", "pending", "queued"].includes(s);
+  return ["running", "in_progress", "pending", "queued", "paused"].includes(s);
 }
 
 async function pollRun(runId) {
