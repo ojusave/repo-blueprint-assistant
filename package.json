@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "workflow:build": "npm ci --include=dev && npm run build",
     "start": "node dist/app/server.js",
     "workflow:start": "node dist/workflow/entry.js",
     "workflow:dev": "tsx watch src/workflow/entry.ts",

@@ -46,9 +46,10 @@ Content-Type: application/json
 
 1. Push this repo to GitHub.
 2. **Blueprint:** connect repo → deploy [`render.yaml`](render.yaml) (web + Postgres).
-3. **Workflow** ([Workflows are not in Blueprints yet](https://render.com/docs/workflows)): **New → Workflow** → link **the same repo**.
+3. **Workflow** ([Blueprints cannot define Workflow services yet](https://render.com/docs/workflows)): create it in the [Dashboard](https://dashboard.render.com) (**New → Workflow**). There is no `render workflows deploy` CLI for provisioning; use the UI (see [Your First Workflow](https://render.com/workflows-tutorial)).
+   - **Repository:** `https://github.com/ojusave/repo-blueprint-assistant` (same repo as the web service).
    - **Root Directory:** leave **blank** (repository root). Tasks live under `src/workflow/`; the compiled entry is **`dist/workflow/entry.js`**.
-   - **Build:** `npm ci --include=dev && npm run build` (same reason as the web service: Render may set `NODE_ENV=production` during build, which would skip devDependencies and drop `tsc`).
+   - **Build:** `npm run workflow:build` or `npm ci --include=dev && npm run build` (same reason as the web service: Render may set `NODE_ENV=production` during build, which would skip devDependencies and drop `tsc`).
    - **Start:** `npm run workflow:start` (runs `node dist/workflow/entry.js`).
    - **Instance:** `standard` or higher is a good default for repo analysis (see [workflow limits](https://render.com/docs/workflows-limits)).
 4. Set web env: **`WORKFLOW_SLUG`** = the workflow **service slug** from the Dashboard (the segment before `/analyze_repository` in the task id, e.g. `blueprint-assistant`), **`RENDER_API_KEY`**, optional **`GITHUB_TOKEN`**, **`PUBLIC_GITHUB_REPO`** (this repo URL).
@@ -59,7 +60,7 @@ Content-Type: application/json
 Requires [Render CLI](https://render.com/docs/cli-glossary) **2.11.0+** (`render --version`). Greenfield setups often start with `render workflows init`; this repo already defines tasks under `src/workflow/` (no separate `workflows/` root dir required).
 
 ```bash
-npm ci --include=dev && npm run build
+npm run workflow:build
 render workflows dev -- node dist/workflow/entry.js
 # Other terminal:
 render workflows tasks list --local
