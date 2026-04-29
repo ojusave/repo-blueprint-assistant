@@ -199,3 +199,9 @@ Not in YAML until Blueprint supports Workflow type.
 ## Approval
 
 This design was produced **before** application code in this repository. Proceeding to implementation is authorized by filling this repo (`DESIGN.md` present + implementation follows it).
+
+---
+
+## Addendum: fork and automatic Render deploy
+
+Implemented after the original approval: when analysis **generates** YAML, the web service can **fork** the upstream repo (GitHub REST), **push** `render.yaml` to a new branch, and **create a web service** via Render’s **`POST /v1/services`** API, then poll until live. See **`README.md`** (**Automatic fork and deploy**) and files under `src/app/provision/`, `src/infra/github-http-fork.ts`, `src/infra/render-http-deploy.ts`. **`DESIGN.md`** folder layout above predates these paths.

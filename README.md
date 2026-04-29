@@ -7,10 +7,10 @@ Scan a **public** GitHub repo with **Render Workflows**: detect `render.yaml`, o
 ## Highlights
 
 - **Express** API with a consistent JSON envelope (`ok` / `error`).
-- **Ports + adapters** for GitHub REST, Render Workflow triggers, and Postgres run metadata.
-- **Render Postgres** stores run rows (`runId` UUID); polling merges Dashboard workflow status.
+- **Ports + adapters** for GitHub REST, Render Workflow triggers, Postgres run metadata, optional **fork + Render REST** deploy.
+- **Render Postgres** stores run rows (`runId` UUID); polling merges workflow status and optional **provision** state (fork URL, live service URL).
 - **`render.yaml`** + **manual preview** (`previews.generation: manual`, opt-in with `[render preview]` on PRs).
-- **Kill switches:** `ANALYSIS_ENABLED=false`, `BLUEPRINT_PUBLISH_ENABLED=false`.
+- **Kill switches:** `ANALYSIS_ENABLED=false`, `BLUEPRINT_PUBLISH_ENABLED=false`, `AUTO_DEPLOY_ENABLED=false`.
 
 ## Overview
 
@@ -21,6 +21,11 @@ Operators deploy the **web** service from Blueprint, then attach a **Workflow** 
 1. Open the deployed site.
 2. Enter `https://github.com/owner/repo` or `owner/repo`.
 3. Wait for polling to finish. When the workflow completes, the UI shows a **Pipeline** timing strip (wall-clock per backend step inside `analyze_repository`, same steps as in the Render Dashboard trace). Copy YAML or use **Push render.yaml to new branch** when publishing is enabled (see **Publish scope** below).
+4. If **`AUTO_DEPLOY`** is configured and the workflow **generated** YAML (no existing repo blueprint), the server may **fork** the repo under the PAT user, **push** `render.yaml` to a branch, **create a Render web service** via the REST API, and show the **live URL** when deploy succeeds (see **Automatic fork and deploy**).
+
+## Automatic fork and deploy
+
+When env is set (`GITHUB_TOKEN`, `RENDER_API_KEY`, **`RENDER_OWNER_ID`**, `AUTO_DEPLOY_ENABLED` not false), **`GET /api/runs/:id`** can trigger a background pipeline after a **`generated`** workflow result: GitHub **fork** → **contents API** push on branch `assistant/bpa-…` → **`POST /v1/services`** → poll deploy until **live**, then persist **`deployed_url`** on the run row. The UI reads the **`provision`** object on each poll. **Existing `render.yaml`:** fork/deploy is **skipped** (`provision.skipReason`: `existing_blueprint`). Implementation: `src/app/provision/run-provision.ts`, `src/infra/github-http-fork.ts`, `src/infra/render-http-deploy.ts`.
 
 ## Publish scope
 
@@ -40,9 +45,9 @@ All successful bodies wrap as `{ "ok": true, "data": ... }`. Errors: `{ "ok": fa
 | Method | Path | Body | Response `data` |
 |--------|------|------|-------------------|
 | `GET` | `/health` | — | `{ "status": "ok" }` |
-| `GET` | `/api/meta` | — | Signup URLs (Ojus UTMs), `publicGithubRepo`, `publishAvailable` |
+| `GET` | `/api/meta` | — | Signup URLs (Ojus UTMs), `publicGithubRepo`, `publishAvailable`, `autoDeployConfigured` |
 | `POST` | `/api/runs` | `{ "repoUrl": string }` | `{ runId, taskRunId, owner, repo, ref }` |
-| `GET` | `/api/runs/:runId` | — | `{ record, workflow }` |
+| `GET` | `/api/runs/:runId` | — | `{ record, workflow, provision }` — `provision` has `state`, `skipReason`, fork fields, `deployedUrl`, `error` when relevant |
 | `POST` | `/api/publish` | `{ "owner", "repo", "yaml", "path"?, "branch"?, "baseBranch"? }` | `{ branch, htmlUrl }` |
 
 Example:
@@ -111,9 +116,13 @@ Confirm **`analyze_repository`** appears (alongside other tasks). The web app ca
 | `RENDER_API_KEY` | Web | Invoke Render API (can be empty until set in Dashboard; app still starts) |
 | `WORKFLOW_SLUG` | Web | Dashboard workflow **service slug** (must match exactly; used as `{slug}/analyze_repository`) |
 | `GITHUB_TOKEN` | Web + Workflow | Rate limits; **`POST /api/publish`** needs push-capable PAT for repos you target (see **Publish scope**). **Fine-grained:** avoid **Public repositories** (read-only); prefer **All repositories** on the token owner + **Contents: Read and write**, or **Only select repositories** if you want a narrow list. **Classic:** **`repo`**. **Org:** SSO authorize if required. |
-| `PUBLIC_GITHUB_REPO` | Web | Header + footer GitHub links |
+| `PUBLIC_GITHUB_REPO` | Web | Header GitHub link target |
 | `ANALYSIS_ENABLED` | Web | `"false"` disables `POST /api/runs` |
 | `BLUEPRINT_PUBLISH_ENABLED` | Web | `"false"` disables `POST /api/publish` |
+| `RENDER_OWNER_ID` | Web | Workspace id (`tea-…`) for **`POST /v1/services`** (fork → deploy flow) |
+| `AUTO_DEPLOY_ENABLED` | Web | `"false"` skips automatic fork + deploy after generated YAML |
+| `RENDER_DEPLOY_REGION` | Web | Region for created web services (default `oregon`) |
+| `RENDER_DEPLOY_PLAN` | Web | Plan slug for created web services (default `starter`) |
 | `RENDER_USE_LOCAL_DEV` | Web | Set to `true` to point the SDK at the local CLI workflow server |
 | `RENDER_LOCAL_DEV_URL` | Web | Defaults to `http://localhost:8120` (see `render workflows dev` port) |
 | `RENDER_API_URL` | Web | Optional override for `https://api.render.com` (advanced; not the local workflow port) |
@@ -163,7 +172,8 @@ Alternatively use **`npm run workflow:dev`** (tsx) as the subprocess after `rend
 
 - `src/app/` — Express routes, middleware.
 - `src/ports/` — Interfaces.
-- `src/infra/` — Adapters (GitHub, Render workflows, Postgres).
+- `src/infra/` — Adapters (GitHub read/publish/fork, Render workflows + REST deploy, Postgres).
+- `src/app/provision/` — Fork + push + create-service orchestration.
 - `src/workflow/` — Task definitions (`npm run workflow:start`).
 - `src/domain/` — Pure helpers + envelope types.
 - `public/` — Static UI + **`api.js`** (single API client).
