@@ -16,9 +16,23 @@ function mapGithubStatusToAppStatus(resStatus: number): number {
   return 502;
 }
 
-/** Turn GitHub error bodies into a short message plus fix hints for common 403s. */
+/** Turn GitHub error bodies into a short message plus fix hints for common statuses. */
 function githubPublishFailureMessage(status: number, bodyText: string): string {
   const snippet = bodyText.slice(0, 320).replace(/\s+/g, " ").trim();
+  if (status === 404) {
+    let apiMessage = "";
+    try {
+      const j = JSON.parse(bodyText) as { message?: string };
+      apiMessage = j.message ?? "";
+    } catch {
+      /* ignore */
+    }
+    const hint404 =
+      apiMessage.toLowerCase().includes("not found")
+        ? " Repo or git ref may not exist, or the token cannot see this repo (GitHub often returns 404 instead of 403). Confirm owner/repo, default branch name, and PAT access. Branches with slashes in the name must use ref URLs that encode `heads/branch/name` as one segment."
+        : "";
+    return `GitHub 404: ${snippet}.${hint404}`;
+  }
   if (status !== 403) {
     return `GitHub ${status}: ${snippet}`;
   }
@@ -95,12 +109,18 @@ export class GitHubPublishRestAdapter implements GitHubPublisher {
     }
   }
 
+  /**
+   * Resolve tip SHA for a branch. GitHub expects the ref as `heads/<branch>` with slashes
+   * in the branch name preserved; encode that whole string as one path segment (not
+   * `/git/ref/heads/foo` only for simple names — nested branches break that pattern).
+   */
   private async getBranchTipSha(
     owner: string,
     repo: string,
     branch: string
   ): Promise<string> {
-    const url = `${BASE}/repos/${owner}/${repo}/git/ref/heads/${encodeURIComponent(branch)}`;
+    const ref = `heads/${branch}`;
+    const url = `${BASE}/repos/${owner}/${repo}/git/ref/${encodeURIComponent(ref)}`;
     const data = (await this.request("GET", url)) as {
       object?: { sha?: string };
     };
