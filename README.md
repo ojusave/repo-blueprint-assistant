@@ -14,7 +14,7 @@ Scan a **public** GitHub repo with **Render Workflows**: detect `render.yaml`, o
 
 ## Overview
 
-Operators deploy the **web** service from Blueprint, then attach a **Workflow** service (Dashboard) because Workflow is **not** in Blueprint yet. Attendees paste `owner/repo`; the UI receives a **run id**, polls `/api/runs/:runId`, and renders YAML when generation succeeds.
+Operators deploy the **web** service from Blueprint, then attach a **Workflow** service (**`render workflows create`** on Render CLI **2.16+**, or the Dashboard). Workflow is **not** in Blueprint yet. Attendees paste `owner/repo`; the UI receives a **run id**, polls `/api/runs/:runId`, and renders YAML when generation succeeds.
 
 ## Usage (product)
 
@@ -46,13 +46,34 @@ Content-Type: application/json
 
 1. Push this repo to GitHub.
 2. **Blueprint:** connect repo → deploy [`render.yaml`](render.yaml) (web + Postgres).
-3. **Workflow** ([Blueprints cannot define Workflow services yet](https://render.com/docs/workflows)): create it from **[Dashboard → New service](https://dashboard.render.com/new)** and pick **Workflow** ([service types](https://render.com/docs/service-types)). There is no `render workflows deploy` CLI for provisioning; use the UI.
+3. **Workflow** ([Blueprints cannot define Workflow services yet](https://render.com/docs/workflows)): provision it with the CLI (**recommended**) or the **[Dashboard → New → Workflow](https://dashboard.render.com/new)**.
+
+   **CLI (`render workflows create`, requires [Render CLI 2.16.0+](https://github.com/render-oss/cli/blob/main/CHANGELOG.md)):** `brew` may lag behind; upgrade with [official install steps](https://render.com/docs/cli#1-install-or-upgrade) if `render --version` is below 2.16.
+
+   ```bash
+   render login
+   render workspace set   # pick target workspace
+   render workflows create \
+     --name repo-blueprint-assistant-wf \
+     --repo https://github.com/ojusave/repo-blueprint-assistant \
+     --branch main \
+     --runtime node \
+     --build-command "npm run workflow:build" \
+     --run-command "npm run workflow:start" \
+     --region oregon \
+     --confirm -o json
+   ```
+
+   Note: **`render services create --type …` does not include Workflow** (only `web_service`, `private_service`, `background_worker`, `static_site`, `cron_job`). Use **`render workflows create`**, not `services create`.
+
+   **Dashboard:** same repo and commands as below if you prefer the UI.
+
    - **Repository:** `https://github.com/ojusave/repo-blueprint-assistant` (same repo as the web service).
    - **Root Directory:** leave **blank** (repository root). Tasks live under `src/workflow/`; the compiled entry is **`dist/workflow/entry.js`**.
    - **Build:** `npm run workflow:build` or `npm ci --include=dev && npm run build` (same reason as the web service: Render may set `NODE_ENV=production` during build, which would skip devDependencies and drop `tsc`).
-   - **Start:** `npm run workflow:start` (runs `node dist/workflow/entry.js`).
-   - **Instance:** `standard` or higher is a good default for repo analysis (see [workflow limits](https://render.com/docs/workflows-limits)).
-4. Set web env: **`WORKFLOW_SLUG`** = the workflow **service slug** from the Dashboard (the segment before `/analyze_repository` in the task id, e.g. `blueprint-assistant`), **`RENDER_API_KEY`**, optional **`GITHUB_TOKEN`**, **`PUBLIC_GITHUB_REPO`** (this repo URL).
+   - **Run / start:** `npm run workflow:start` (runs `node dist/workflow/entry.js`).
+   - **Instance:** pick **standard** or higher in the Dashboard for repo analysis if offered (see [workflow limits](https://render.com/docs/workflows-limits)).
+4. Set web env: **`WORKFLOW_SLUG`** = the workflow **slug** (segment before `/analyze_repository`; copy from **`render workflows list -o json`** or the Workflow service page), **`RENDER_API_KEY`**, optional **`GITHUB_TOKEN`**, **`PUBLIC_GITHUB_REPO`** (this repo URL).
 5. Workflow env: **`GITHUB_TOKEN`** recommended for GitHub API rate limits (public repo cloning is still subject to rate limits without a token).
 
 ### Verify workflows locally
@@ -91,9 +112,9 @@ Confirm **`analyze_repository`** appears (alongside other tasks). The web app ca
 
 ### I do not see “Workflow” in my workspace
 
-- **Create:** Workflows are added like any other service: **[New → Workflow](https://dashboard.render.com/new)** (not under Postgres or Blueprint-only flows). After deploy, they show in the service list with type **Workflow**.
+- **Create:** Use **`render workflows create`** (CLI **2.16+**) or **[New → Workflow](https://dashboard.render.com/new)**. After deploy, workflows appear in **`render workflows list`** and in the service list.
 - **HIPAA:** Per [Workflow beta limitations](https://render.com/docs/workflows#beta-limitations), **you cannot create new Workflow services in a HIPAA-enabled workspace**. Use a non-HIPAA workspace or another compute type (for example a **background worker**) if you must stay on HIPAA hosts.
-- **CLI:** After `render login` and `render workspace set`, run `render workflows list` to see workflows in the active workspace (empty until you create one).
+- **CLI:** After `render login` and `render workspace set`, run `render workflows list` (empty until you create one).
 
 ## Local development
 
