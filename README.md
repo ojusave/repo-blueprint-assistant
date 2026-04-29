@@ -46,7 +46,7 @@ Content-Type: application/json
 
 1. Push this repo to GitHub.
 2. **Blueprint:** connect repo → deploy [`render.yaml`](render.yaml) (web + Postgres).
-3. **Workflow** ([Blueprints cannot define Workflow services yet](https://render.com/docs/workflows)): create it in the [Dashboard](https://dashboard.render.com) (**New → Workflow**). There is no `render workflows deploy` CLI for provisioning; use the UI (see [Your First Workflow](https://render.com/workflows-tutorial)).
+3. **Workflow** ([Blueprints cannot define Workflow services yet](https://render.com/docs/workflows)): create it from **[Dashboard → New service](https://dashboard.render.com/new)** and pick **Workflow** ([service types](https://render.com/docs/service-types)). There is no `render workflows deploy` CLI for provisioning; use the UI.
    - **Repository:** `https://github.com/ojusave/repo-blueprint-assistant` (same repo as the web service).
    - **Root Directory:** leave **blank** (repository root). Tasks live under `src/workflow/`; the compiled entry is **`dist/workflow/entry.js`**.
    - **Build:** `npm run workflow:build` or `npm ci --include=dev && npm run build` (same reason as the web service: Render may set `NODE_ENV=production` during build, which would skip devDependencies and drop `tsc`).
@@ -88,6 +88,12 @@ Confirm **`analyze_repository`** appears (alongside other tasks). The web app ca
 
 - Logs: Dashboard → service → **Logs**.
 - Health: `/health` for Blueprint checks.
+
+### I do not see “Workflow” in my workspace
+
+- **Create:** Workflows are added like any other service: **[New → Workflow](https://dashboard.render.com/new)** (not under Postgres or Blueprint-only flows). After deploy, they show in the service list with type **Workflow**.
+- **HIPAA:** Per [Workflow beta limitations](https://render.com/docs/workflows#beta-limitations), **you cannot create new Workflow services in a HIPAA-enabled workspace**. Use a non-HIPAA workspace or another compute type (for example a **background worker**) if you must stay on HIPAA hosts.
+- **CLI:** After `render login` and `render workspace set`, run `render workflows list` to see workflows in the active workspace (empty until you create one).
 
 ## Local development
 
