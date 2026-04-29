@@ -1,3 +1,8 @@
+/**
+ * Express composition root: static UI + API + Postgres migrations.
+ * Two GitHub write adapters when GITHUB_TOKEN is set: githubPush (always, for fork/deploy),
+ * githubPublisher (only if BLUEPRINT_PUBLISH_ENABLED, for POST /api/publish).
+ */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import cors from "cors";

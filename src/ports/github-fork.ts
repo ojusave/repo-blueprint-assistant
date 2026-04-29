@@ -1,4 +1,7 @@
-/** Port: fork upstream repo into the authenticated user's namespace (GitHub REST). */
+/**
+ * Port: fork upstream repo into the authenticated user’s namespace (GitHub REST).
+ * Implementation: GitHubForkRestAdapter in infra/github-http-fork.ts.
+ */
 
 export type ForkResult = {
   owner: string;

@@ -1,5 +1,8 @@
-/** Parse workflow task results[] payload from analyze_repository (opaque JSON). */
-
+/**
+ * Normalizes `analyze_repository` task output (results[0]) so HTTP routes can branch without
+ * knowing raw workflow JSON shapes. "running" means missing payload or not yet terminal from
+ * the caller’s perspective.
+ */
 export type WorkflowOutcome =
   | { kind: "generated"; yaml: string }
   | { kind: "existing_blueprint" }

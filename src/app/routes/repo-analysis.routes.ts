@@ -1,3 +1,11 @@
+/**
+ * Analysis runs API: start Render Workflow task for `analyze_repository`, poll task status,
+ * and (when results are terminal) optionally dispatch fork + push + Render web service create.
+ *
+ * Flow: POST /api/runs → GET /api/runs/:id (polled by UI). Each GET loads workflow state from
+ * Render, runs maybeDispatchProvision once per run when provision_state is still null, then
+ * returns record + workflow + provision envelope for the client.
+ */
 import { Router } from "express";
 import { z } from "zod";
 import type { WebEnv } from "../../config/env.js";
@@ -56,6 +64,11 @@ export function createRunsRouter(deps: {
 }): Router {
   const r = Router();
 
+  /**
+   * When the workflow has finished and Postgres shows no provision decision yet, classify the
+   * task result and either skip fork/deploy (existing yaml, error, missing env) or fire
+   * runForkDeployProvision in the background (single winner via tryBeginProvision).
+   */
   async function maybeDispatchProvision(
     runId: string,
     wf: {

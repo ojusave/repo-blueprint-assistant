@@ -1,3 +1,6 @@
+/**
+ * Adapter for Render SDK workflows only (startTask, getTaskRun). Fork/deploy uses RenderDeployRestAdapter + REST /v1/services.
+ */
 import { ClientError, Render, ServerError } from "@renderinc/sdk";
 import { AppError } from "../domain/errors.js";
 import type { WorkflowTrigger } from "../ports/render-workflow-client.js";

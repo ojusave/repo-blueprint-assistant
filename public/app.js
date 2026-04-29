@@ -1,3 +1,7 @@
+/**
+ * Browser UI: submit repo URL, poll GET /api/runs/:id for workflow + provision until both
+ * analysis and fork/deploy (if any) reach a terminal state for the UI.
+ */
 import { fetchMeta, getRun, postPublish, postRun } from "./api.js";
 
 /** Set after POST /api/runs so publish can target the same repo + base branch. */
@@ -328,6 +332,7 @@ function shouldShowSpinner(statusRaw) {
   return ["running", "in_progress", "pending", "queued", "paused"].includes(s);
 }
 
+/** Stop polling when workflow is terminal and provision is not still running or unsettled. */
 function workflowPollingDone(wf, provision) {
   if (!isTerminalWorkflowStatus(wf)) return false;
   const st = provision?.state;
@@ -336,6 +341,7 @@ function workflowPollingDone(wf, provision) {
   return true;
 }
 
+/** Polls server until YAML analysis completes and fork/deploy finishes or skips (see workflowPollingDone). */
 async function pollRun(runId) {
   const panel = document.getElementById("panel");
   if (panel) {

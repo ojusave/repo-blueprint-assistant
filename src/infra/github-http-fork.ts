@@ -1,3 +1,7 @@
+/**
+ * GitHub REST fork adapter: POST /repos/{owner}/{repo}/forks, or reuse existing repo under
+ * the token user when the name already exists. Used only by the automatic deploy path.
+ */
 import { AppError } from "../domain/errors.js";
 import type { ForkResult, GitHubFork } from "../ports/github-fork.js";
 import { GITHUB_REST_API_VERSION } from "./github-api-version.js";

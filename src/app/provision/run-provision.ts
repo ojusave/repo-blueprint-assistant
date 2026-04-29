@@ -1,3 +1,8 @@
+/**
+ * Background pipeline: fork upstream GitHub repo → push generated render.yaml to a new branch →
+ * POST /v1/services to create a web service → poll deploy until live → persist public URL.
+ * Invoked fire-and-forget from repo-analysis.routes after tryBeginProvision succeeds.
+ */
 import type { WebEnv } from "../../config/env.js";
 import { extractWebServiceFromBlueprintYaml } from "../../domain/parseGeneratedBlueprint.js";
 import type { GitHubFork } from "../../ports/github-fork.js";
@@ -18,6 +23,7 @@ async function sleep(ms: number): Promise<void> {
   await new Promise((r) => setTimeout(r, ms));
 }
 
+/** Polls GET .../deploys/:deployId until status is terminal (live or failure). */
 async function waitForDeployLive(
   deploy: RenderDeployRestAdapter,
   serviceId: string,
@@ -42,9 +48,7 @@ async function waitForDeployLive(
   throw new Error("Timed out waiting for deploy to go live");
 }
 
-/**
- * Fork upstream repo, push generated render.yaml to a new branch, create Render web service, poll until URL is live.
- */
+/** Reads web service public URL from GET /services/:id response body. */
 function extractServicePublicUrl(svc: unknown): string | undefined {
   if (!svc || typeof svc !== "object") return undefined;
   const o = svc as Record<string, unknown>;
@@ -59,6 +63,10 @@ function extractServicePublicUrl(svc: unknown): string | undefined {
   return undefined;
 }
 
+/**
+ * Fork upstream repo, push generated render.yaml to a new branch, create Render web service,
+ * poll deploy until live, save deployed_url on the run row (or failProvision on error).
+ */
 export async function runForkDeployProvision(opts: {
   env: WebEnv;
   runs: RunStore;

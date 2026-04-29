@@ -1,3 +1,7 @@
+/**
+ * Postgres persistence for analysis runs: workflow task linkage plus optional fork/deploy
+ * columns updated by the provision pipeline (see RunStore in ports/analysis-run-store.ts).
+ */
 import postgres from "postgres";
 import type {
   ProvisionSkipReason,

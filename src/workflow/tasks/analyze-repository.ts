@@ -1,3 +1,7 @@
+/**
+ * Root workflow task: snapshot tree → detect or generate render.yaml → validate.
+ * Invoked by the web service as `{WORKFLOW_SLUG}/analyze_repository` with { owner, repo, ref }.
+ */
 import { task } from "@renderinc/sdk/workflows";
 import {
   mergeSlices,

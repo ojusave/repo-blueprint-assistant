@@ -1,3 +1,7 @@
+/**
+ * Extract build/start/runtime from generated YAML text for POST /v1/services (fork pipeline).
+ * Generator writes a minimal services[0] block; this stays strict enough to fail fast.
+ */
 import YAML from "yaml";
 import { AppError } from "./errors.js";
 

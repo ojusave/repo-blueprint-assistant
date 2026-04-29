@@ -1,3 +1,8 @@
+/**
+ * Render Control Plane REST (same API key as Workflows SDK): create web services and read
+ * deploy/service details. The @renderinc/sdk Render class used here only exposes workflows;
+ * provision uses fetch directly to /v1/services.
+ */
 import { AppError } from "../domain/errors.js";
 
 type Opts = {

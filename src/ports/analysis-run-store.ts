@@ -1,4 +1,7 @@
-/** Port: persist analysis run metadata (Postgres behind adapter). */
+/**
+ * Port: persist analysis run metadata (Postgres behind adapter).
+ * Provision fields track fork → deploy pipeline state; see maybeDispatchProvision in repo-analysis.routes.ts.
+ */
 
 export type ProvisionSkipReason =
   | "existing_blueprint"
