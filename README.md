@@ -28,7 +28,7 @@ Operators deploy the **web** service from Blueprint, then attach a **Workflow** 
 
 Practical setups:
 
-- **Repos owned by the same GitHub user or org as the token:** use a **fine-grained PAT** with **Resource owner** set to that account and **Repository access → All repositories** (or only selected repos). **That choice is not enough by itself:** under **Permissions**, open the **Repository permissions** tab, click **+ Add permissions**, add **Contents**, and set it to **Read and write** (and keep **Metadata** at **Read-only** as GitHub suggests). If the UI still shows **Repositories 0** or no Contents row, the token cannot push; publish will 403.
+- **Repos owned by the same GitHub user or org as the token:** use a **fine-grained PAT** with **Resource owner** set to that account and **Repository access → All repositories** (or only selected repos). **That choice is not enough by itself:** under **Permissions**, open the **Repository permissions** tab, click **+ Add permissions**, add **Contents**, and set the access dropdown to **Read and write** (GitHub does not show a lone **Write** label; that level is **Read and write**). If you only see **Read-only**, switch **Repository access** away from **Public repositories** (that mode is read-only for repo contents). (and keep **Metadata** at **Read-only** as GitHub suggests). If the UI still shows **Repositories 0** or no Contents row, the token cannot push; publish will 403.
 - **Third-party repos** (someone else’s `owner/repo`): publish will fail with **403** unless that repo grants your token user push access (collaborator, org bot, etc.). A future fork-or-OAuth flow would be a separate feature.
 
 If you only need read-only scanning, omit publish or set **`BLUEPRINT_PUBLISH_ENABLED=false`**.
