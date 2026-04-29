@@ -1,5 +1,9 @@
 import { task } from "@renderinc/sdk/workflows";
 import type { MergedInventory } from "../../contracts/analysis.js";
+import {
+  defaultBuildCommand,
+  defaultStartCommand,
+} from "../../domain/blueprintDefaults.js";
 
 export const generateBlueprint = task(
   {
@@ -27,10 +31,24 @@ export const generateBlueprint = task(
     if (inventory.runtime === "unknown") {
       notes.push("Runtime not inferred; using node web placeholder.");
     }
-    const buildCmd =
-      inventory.scripts?.build ?? 'echo "Set buildCommand to your build step"';
-    const startCmd =
-      inventory.scripts?.start ?? 'echo "Set startCommand to your start step"';
+    const buildCmd = defaultBuildCommand(inventory);
+    const startCmd = defaultStartCommand(inventory);
+    if (!inventory.scripts?.build && inventory.hasPackageJson) {
+      notes.push(
+        'No npm "build" script: using `npm install` as buildCommand (install deps before start).'
+      );
+    }
+    if (!inventory.scripts?.start) {
+      if (inventory.main) {
+        notes.push(
+          `No npm "start" script: using package.json "main" as entry → ${startCmd}`
+        );
+      } else if (inventory.runtime === "node" || inventory.hasPackageJson) {
+        notes.push(
+          'No npm "start" or "main": using `node index.js` (change if your entry file differs).'
+        );
+      }
+    }
     const runtime =
       inventory.runtime === "python"
         ? "python"

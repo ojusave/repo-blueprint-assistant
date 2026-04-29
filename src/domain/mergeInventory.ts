@@ -29,6 +29,7 @@ export function mergeSlices(
   const root =
     active.find((s) => s.rootPath === ".") ?? active[0];
   const scripts = root?.scripts;
+  const main = root?.main;
 
   return {
     runtime: guessRuntime(),
@@ -38,6 +39,7 @@ export function mergeSlices(
         (p) => p.endsWith("Dockerfile") || p.endsWith("dockerfile")
       ) || active.some((s) => s.hasDockerfile),
     scripts,
+    main,
     warnings,
     slices: active,
   };

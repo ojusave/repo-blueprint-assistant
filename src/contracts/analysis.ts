@@ -14,6 +14,8 @@ export type RepoSnapshot = {
 export type PackageSlice = {
   rootPath: string;
   name?: string;
+  /** package.json "main" (entry file), e.g. index.js */
+  main?: string;
   scripts?: { build?: string; start?: string };
   hasDockerfile: boolean;
   skipped?: boolean;
@@ -25,6 +27,8 @@ export type MergedInventory = {
   hasPackageJson: boolean;
   hasDockerfile: boolean;
   scripts?: { build?: string; start?: string };
+  /** Root package.json `main` when present */
+  main?: string;
   warnings: string[];
   slices: PackageSlice[];
 };

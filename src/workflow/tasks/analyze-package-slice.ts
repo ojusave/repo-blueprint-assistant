@@ -31,6 +31,7 @@ export const analyzePackageSlice = task(
     }
     const gh = getGithubRepository();
     let name: string | undefined;
+    let main: string | undefined;
     let scripts: { build?: string; start?: string } | undefined;
     try {
       const raw = await gh.fetchFile(
@@ -41,9 +42,14 @@ export const analyzePackageSlice = task(
       );
       const pkg = JSON.parse(raw) as {
         name?: string;
+        main?: string;
         scripts?: { build?: string; start?: string };
       };
       name = pkg.name;
+      main =
+        typeof pkg.main === "string" && pkg.main.trim().length > 0
+          ? pkg.main.trim()
+          : undefined;
       scripts = {
         build: pkg.scripts?.build,
         start: pkg.scripts?.start,
@@ -68,6 +74,7 @@ export const analyzePackageSlice = task(
     return {
       rootPath: input.rootPath,
       name,
+      main,
       scripts,
       hasDockerfile,
     };
