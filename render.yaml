@@ -37,3 +37,5 @@ services:
         sync: false
       - key: ANALYSIS_ENABLED
         value: "true"
+      - key: BLUEPRINT_PUBLISH_ENABLED
+        value: "true"

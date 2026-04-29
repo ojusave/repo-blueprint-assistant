@@ -82,6 +82,16 @@
         <pre id="status" class="mono"></pre>
         <h3 id="yaml-heading" class="hidden">render.yaml</h3>
         <pre id="yaml-out" class="mono yaml hidden"></pre>
+        <div id="publish-panel" class="publish-panel hidden">
+          <p class="publish-lede">
+            Push this YAML to a new branch on the same public repo (server needs
+            <code>GITHUB_TOKEN</code> with contents write).
+          </p>
+          <button type="button" id="publish-btn" class="btn btn-secondary">
+            Push render.yaml to new branch
+          </button>
+          <pre id="publish-result" class="mono publish-result hidden"></pre>
+        </div>
       </section>
     </main>
 

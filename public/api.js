@@ -37,3 +37,15 @@ export async function getRun(runId) {
   if (!j.ok) throw new Error(envelopeErrorMessage(j, "poll failed"));
   return j.data;
 }
+
+/** Push YAML to a new branch (requires server GITHUB_TOKEN with repo contents write). */
+export async function postPublish(body) {
+  const r = await fetch("/api/publish", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const j = await r.json();
+  if (!j.ok) throw new Error(envelopeErrorMessage(j, "publish failed"));
+  return j.data;
+}

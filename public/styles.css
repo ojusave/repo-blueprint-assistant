@@ -110,6 +110,34 @@ code {
   color: #0d0d0f;
 }
 
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.publish-panel {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.publish-lede {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin: 0 0 0.75rem;
+  max-width: 65ch;
+}
+
+.publish-result {
+  margin-top: 0.75rem;
+}
+
 .panel {
   margin-top: 2rem;
   padding: 1.25rem;

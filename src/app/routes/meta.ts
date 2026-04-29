@@ -12,6 +12,9 @@ export function createMetaRouter(env: WebEnv): Router {
         signupNavbar: renderSignupUrlWithUtms("navbar_button"),
         signupHero: renderSignupUrlWithUtms("hero_cta"),
         signupFooter: renderSignupUrlWithUtms("footer_link"),
+        publishAvailable:
+          env.BLUEPRINT_PUBLISH_ENABLED &&
+          Boolean(process.env.GITHUB_TOKEN?.trim()),
       })
     );
   });

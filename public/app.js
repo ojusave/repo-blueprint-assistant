@@ -1,4 +1,8 @@
-import { fetchMeta, getRun, postRun } from "./api.js";
+import { fetchMeta, getRun, postPublish, postRun } from "./api.js";
+
+/** Set after POST /api/runs so publish can target the same repo + base branch. */
+let lastRunMeta = null;
+let metaPublishAvailable = false;
 
 function renderYaml(text) {
   const y = document.getElementById("yaml-out");
@@ -54,6 +58,14 @@ function renderWorkflowPayload(results) {
   return JSON.stringify(results, null, 2);
 }
 
+function maybeShowPublishPanel() {
+  const yamlOut = document.getElementById("yaml-out");
+  const pub = document.getElementById("publish-panel");
+  if (!yamlOut || !pub || yamlOut.classList.contains("hidden")) return;
+  if (!metaPublishAvailable || !lastRunMeta) return;
+  pub.classList.remove("hidden");
+}
+
 async function pollRun(runId) {
   const statusEl = document.getElementById("status");
   const panel = document.getElementById("panel");
@@ -77,7 +89,10 @@ async function pollRun(runId) {
       wf.status === "completed" ||
       wf.status === "failed" ||
       wf.status === "canceled";
-    if (done) break;
+    if (done) {
+      maybeShowPublishPanel();
+      break;
+    }
     await new Promise((res) => setTimeout(res, 2000));
   }
 }
@@ -85,6 +100,7 @@ async function pollRun(runId) {
 async function loadMeta() {
   try {
     const m = await fetchMeta();
+    metaPublishAvailable = m.publishAvailable === true;
     const gh = document.getElementById("link-github");
     if (gh && m.publicGithubRepo) gh.href = m.publicGithubRepo;
     const sn = document.getElementById("link-signup-nav");
@@ -105,20 +121,65 @@ document.getElementById("form")?.addEventListener("submit", async (ev) => {
   const input = document.getElementById("repoUrl");
   const repoUrl = input?.value?.trim();
   if (!repoUrl) return;
+  lastRunMeta = null;
   document.getElementById("yaml-out")?.classList.add("hidden");
   document.getElementById("yaml-heading")?.classList.add("hidden");
+  document.getElementById("publish-panel")?.classList.add("hidden");
+  const pubResult = document.getElementById("publish-result");
+  if (pubResult) {
+    pubResult.textContent = "";
+    pubResult.classList.add("hidden");
+  }
   const statusEl = document.getElementById("status");
   if (statusEl) statusEl.textContent = "Starting…";
   document.getElementById("panel")?.classList.remove("hidden");
 
   try {
     const data = await postRun(repoUrl);
+    lastRunMeta = {
+      owner: data.owner,
+      repo: data.repo,
+      ref: data.ref,
+    };
     if (statusEl) {
       statusEl.textContent = `Started run ${data.runId}\nPolling…`;
     }
     await pollRun(data.runId);
   } catch (e) {
     if (statusEl) statusEl.textContent = e instanceof Error ? e.message : String(e);
+  }
+});
+
+document.getElementById("publish-btn")?.addEventListener("click", async () => {
+  const yaml =
+    document.getElementById("yaml-out")?.textContent?.trim() ?? "";
+  const out = document.getElementById("publish-result");
+  if (!yaml || !lastRunMeta) {
+    if (out) {
+      out.textContent = "Nothing to publish yet.";
+      out.classList.remove("hidden");
+    }
+    return;
+  }
+  if (out) {
+    out.textContent = "Publishing…";
+    out.classList.remove("hidden");
+  }
+  try {
+    const data = await postPublish({
+      owner: lastRunMeta.owner,
+      repo: lastRunMeta.repo,
+      yaml,
+      baseBranch: lastRunMeta.ref,
+      path: "render.yaml",
+    });
+    if (out) {
+      out.textContent = `Branch ${data.branch}\n${data.htmlUrl}`;
+    }
+  } catch (e) {
+    if (out) {
+      out.textContent = e instanceof Error ? e.message : String(e);
+    }
   }
 });
 

@@ -6,12 +6,14 @@ import pino from "pino";
 import postgres from "postgres";
 import { loadWebEnv } from "../config/env.js";
 import { migrate } from "../db/migrate.js";
+import { GitHubPublishRestAdapter } from "../infra/github.publish.rest.js";
 import { GitHubRestAdapter } from "../infra/github.rest.js";
 import { PostgresRunStore } from "../infra/postgres.run.store.js";
 import { RenderWorkflowAdapter } from "../infra/render.workflow.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { healthRouter } from "./routes/health.js";
 import { createMetaRouter } from "./routes/meta.js";
+import { createPublishRouter } from "./routes/publish.js";
 import { createRunsRouter } from "./routes/runs.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -27,6 +29,15 @@ async function main(): Promise<void> {
     timeoutMs: Number(process.env.GITHUB_HTTP_TIMEOUT_MS ?? 15000),
   });
 
+  const githubToken = process.env.GITHUB_TOKEN?.trim() ?? "";
+  const githubPublisher =
+    env.BLUEPRINT_PUBLISH_ENABLED && githubToken.length > 0
+      ? new GitHubPublishRestAdapter({
+          token: githubToken,
+          timeoutMs: Number(process.env.GITHUB_HTTP_TIMEOUT_MS ?? 15000),
+        })
+      : null;
+
   const workflow = new RenderWorkflowAdapter({
     apiKey: env.RENDER_API_KEY,
     workflowSlug: env.WORKFLOW_SLUG,
@@ -37,7 +48,7 @@ async function main(): Promise<void> {
 
   const app = express();
   app.use(cors());
-  app.use(express.json({ limit: "32kb" }));
+  app.use(express.json({ limit: "512kb" }));
 
   const repoRoot = path.join(__dirname, "..", "..");
   app.use(
@@ -54,6 +65,14 @@ async function main(): Promise<void> {
       github,
       workflow,
       runs,
+      log,
+    })
+  );
+  app.use(
+    createPublishRouter({
+      env,
+      github,
+      publisher: githubPublisher,
       log,
     })
   );

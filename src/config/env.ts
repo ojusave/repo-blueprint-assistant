@@ -20,6 +20,11 @@ const webSchema = z.object({
     .string()
     .optional()
     .transform((v) => v !== "false"),
+  /** When false, POST /api/publish returns FEATURE_DISABLED. */
+  BLUEPRINT_PUBLISH_ENABLED: z
+    .string()
+    .optional()
+    .transform((v) => v !== "false"),
 });
 
 export type WebEnv = z.infer<typeof webSchema>;

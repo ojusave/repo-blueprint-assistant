@@ -10,7 +10,7 @@ Scan a **public** GitHub repo with **Render Workflows**: detect `render.yaml`, o
 - **Ports + adapters** for GitHub REST, Render Workflow triggers, and Postgres run metadata.
 - **Render Postgres** stores run rows (`runId` UUID); polling merges Dashboard workflow status.
 - **`render.yaml`** + **manual preview** (`previews.generation: manual`, opt-in with `[render preview]` on PRs).
-- **Kill switch:** `ANALYSIS_ENABLED=false`.
+- **Kill switches:** `ANALYSIS_ENABLED=false`, `BLUEPRINT_PUBLISH_ENABLED=false`.
 
 ## Overview
 
@@ -20,7 +20,7 @@ Operators deploy the **web** service from Blueprint, then attach a **Workflow** 
 
 1. Open the deployed site.
 2. Enter `https://github.com/owner/repo` or `owner/repo`.
-3. Wait for polling to finish; copy YAML or read validation notes.
+3. Wait for polling to finish; copy YAML or use **Push render.yaml to new branch** when the server has **`GITHUB_TOKEN`** with contents write (opens a branch such as `assistant/bpa-…`).
 
 ## HTTP API
 
@@ -29,9 +29,10 @@ All successful bodies wrap as `{ "ok": true, "data": ... }`. Errors: `{ "ok": fa
 | Method | Path | Body | Response `data` |
 |--------|------|------|-------------------|
 | `GET` | `/health` | — | `{ "status": "ok" }` |
-| `GET` | `/api/meta` | — | Signup URLs (Ojus UTMs), `publicGithubRepo` |
+| `GET` | `/api/meta` | — | Signup URLs (Ojus UTMs), `publicGithubRepo`, `publishAvailable` |
 | `POST` | `/api/runs` | `{ "repoUrl": string }` | `{ runId, taskRunId, owner, repo, ref }` |
 | `GET` | `/api/runs/:runId` | — | `{ record, workflow }` |
+| `POST` | `/api/publish` | `{ "owner", "repo", "yaml", "path"?, "branch"?, "baseBranch"? }` | `{ branch, htmlUrl }` |
 
 Example:
 
@@ -98,9 +99,10 @@ Confirm **`analyze_repository`** appears (alongside other tasks). The web app ca
 | `DATABASE_URL` | Web | From Blueprint `fromDatabase` |
 | `RENDER_API_KEY` | Web | Invoke Render API (can be empty until set in Dashboard; app still starts) |
 | `WORKFLOW_SLUG` | Web | Dashboard workflow **service slug** (must match exactly; used as `{slug}/analyze_repository`) |
-| `GITHUB_TOKEN` | Web + Workflow | Higher GitHub rate limits |
+| `GITHUB_TOKEN` | Web + Workflow | Rate limits; **`POST /api/publish`** needs a token with **`contents:write`** on the target repo |
 | `PUBLIC_GITHUB_REPO` | Web | Header + footer GitHub links |
 | `ANALYSIS_ENABLED` | Web | `"false"` disables `POST /api/runs` |
+| `BLUEPRINT_PUBLISH_ENABLED` | Web | `"false"` disables `POST /api/publish` |
 | `RENDER_USE_LOCAL_DEV` | Web | Set to `true` to point the SDK at the local CLI workflow server |
 | `RENDER_LOCAL_DEV_URL` | Web | Defaults to `http://localhost:8120` (see `render workflows dev` port) |
 | `RENDER_API_URL` | Web | Optional override for `https://api.render.com` (advanced; not the local workflow port) |
