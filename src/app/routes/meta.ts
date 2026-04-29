@@ -15,6 +15,11 @@ export function createMetaRouter(env: WebEnv): Router {
         publishAvailable:
           env.BLUEPRINT_PUBLISH_ENABLED &&
           Boolean(process.env.GITHUB_TOKEN?.trim()),
+        autoDeployConfigured:
+          Boolean(env.RENDER_OWNER_ID?.trim()) &&
+          Boolean(process.env.GITHUB_TOKEN?.trim()) &&
+          Boolean(env.RENDER_API_KEY?.trim()) &&
+          env.AUTO_DEPLOY_ENABLED === true,
       })
     );
   });

@@ -25,6 +25,20 @@ const webSchema = z.object({
     .string()
     .optional()
     .transform((v) => v !== "false"),
+  /** Render workspace / team ID (`tea-...`) for POST /v1/services (fork → deploy flow). */
+  RENDER_OWNER_ID: z.string().optional().default(""),
+  /** Defaults for created web services (fork pipeline). */
+  RENDER_DEPLOY_REGION: z
+    .enum(["oregon", "frankfurt", "ohio", "singapore", "virginia"])
+    .optional()
+    .default("oregon"),
+  /** Render API accepts multiple plan slugs; keep a string default. */
+  RENDER_DEPLOY_PLAN: z.string().optional().default("starter"),
+  /** When false, generated blueprints are not forked / deployed automatically. */
+  AUTO_DEPLOY_ENABLED: z
+    .string()
+    .optional()
+    .transform((v) => v !== "false"),
 });
 
 export type WebEnv = z.infer<typeof webSchema>;

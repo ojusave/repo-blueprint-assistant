@@ -6,9 +6,11 @@ import pino from "pino";
 import postgres from "postgres";
 import { loadWebEnv } from "../config/env.js";
 import { migrate } from "../db/migrate.js";
+import { GitHubForkRestAdapter } from "../infra/github-http-fork.js";
 import { GitHubPublishRestAdapter } from "../infra/github-http-publish.js";
 import { GitHubRestAdapter } from "../infra/github-http-read.js";
 import { PostgresRunStore } from "../infra/postgres-analysis-runs.js";
+import { RenderDeployRestAdapter } from "../infra/render-http-deploy.js";
 import { RenderWorkflowAdapter } from "../infra/render-workflows-client.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { healthRouter } from "./routes/health.js";
@@ -30,11 +32,32 @@ async function main(): Promise<void> {
   });
 
   const githubToken = process.env.GITHUB_TOKEN?.trim() ?? "";
-  const githubPublisher =
-    env.BLUEPRINT_PUBLISH_ENABLED && githubToken.length > 0
+  const githubHttpTimeoutMs = Number(process.env.GITHUB_HTTP_TIMEOUT_MS ?? 15000);
+  const githubPush =
+    githubToken.length > 0
       ? new GitHubPublishRestAdapter({
           token: githubToken,
-          timeoutMs: Number(process.env.GITHUB_HTTP_TIMEOUT_MS ?? 15000),
+          timeoutMs: githubHttpTimeoutMs,
+        })
+      : null;
+  const githubPublisher =
+    env.BLUEPRINT_PUBLISH_ENABLED && githubPush ? githubPush : null;
+  const githubFork =
+    githubToken.length > 0
+      ? new GitHubForkRestAdapter({
+          token: githubToken,
+          timeoutMs: githubHttpTimeoutMs,
+        })
+      : null;
+
+  const renderApiBase =
+    env.RENDER_API_URL?.trim() || "https://api.render.com";
+  const renderDeploy =
+    env.RENDER_API_KEY.trim().length > 0
+      ? new RenderDeployRestAdapter({
+          apiKey: env.RENDER_API_KEY.trim(),
+          baseUrl: renderApiBase,
+          timeoutMs: 60000,
         })
       : null;
 
@@ -66,6 +89,9 @@ async function main(): Promise<void> {
       workflow,
       runs,
       log,
+      fork: githubFork,
+      publisher: githubPush,
+      deploy: renderDeploy,
     })
   );
   app.use(

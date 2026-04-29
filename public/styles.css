@@ -480,6 +480,44 @@ code {
   margin-top: 0.85rem;
 }
 
+.provision-panel {
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(70, 236, 169, 0.04);
+}
+
+.provision-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.provision-line {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  max-width: 62ch;
+  line-height: 1.45;
+}
+
+.provision-fork {
+  margin: 0.65rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
+.provision-url {
+  margin: 0.65rem 0 0;
+  font-size: 0.9rem;
+}
+
+.provision-url a {
+  color: var(--accent);
+  word-break: break-all;
+}
+
 .mono {
   white-space: pre-wrap;
   word-break: break-word;

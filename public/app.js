@@ -223,6 +223,89 @@ function maybeShowPublishPanel() {
   pub.classList.remove("hidden");
 }
 
+function provisionSkipHint(reason) {
+  const m = {
+    existing_blueprint:
+      "Fork and deploy skipped: this repo already has a render.yaml.",
+    analysis_error: "Fork and deploy skipped: analysis reported an error.",
+    no_github_token:
+      "Fork and deploy skipped: set GITHUB_TOKEN on the web service (fork + push need repo scope).",
+    no_render_owner:
+      "Fork and deploy skipped: set RENDER_OWNER_ID (Dashboard → Workspace Settings → ID).",
+    no_render_deploy:
+      "Fork and deploy skipped: RENDER_API_KEY missing for Render REST.",
+    auto_deploy_disabled:
+      "Fork and deploy skipped: AUTO_DEPLOY_ENABLED is false.",
+  };
+  return m[reason] ?? `Fork/deploy skipped (${reason}).`;
+}
+
+/** Shows fork → Render deploy progress from GET /api/runs/:id provision envelope. */
+function renderProvisionPanel(provision) {
+  const panel = document.getElementById("provision-panel");
+  const line = document.getElementById("provision-line");
+  const forkLine = document.getElementById("provision-fork-line");
+  const urlLine = document.getElementById("provision-url-line");
+  const urlLink = document.getElementById("provision-url-link");
+  if (!panel || !line) return;
+
+  const hasAny =
+    provision &&
+    (provision.state != null ||
+      provision.deployedUrl ||
+      provision.forkHtmlUrl ||
+      provision.skipReason);
+
+  if (!hasAny) {
+    panel.classList.add("hidden");
+    return;
+  }
+
+  panel.classList.remove("hidden");
+
+  if (provision.state === "skipped") {
+    line.textContent = provisionSkipHint(provision.skipReason);
+    forkLine?.classList.add("hidden");
+    urlLine?.classList.add("hidden");
+    return;
+  }
+
+  if (provision.state === "failed" && provision.error) {
+    line.textContent = `Fork/deploy failed: ${provision.error}`;
+    forkLine?.classList.add("hidden");
+    urlLine?.classList.add("hidden");
+    return;
+  }
+
+  if (provision.state === "done" && provision.deployedUrl) {
+    line.textContent = "Deployed on Render.";
+    forkLine?.classList.add("hidden");
+    if (urlLine && urlLink) {
+      urlLink.href = provision.deployedUrl;
+      urlLink.textContent = provision.deployedUrl;
+      urlLine.classList.remove("hidden");
+    }
+    return;
+  }
+
+  if (provision.state === "running") {
+    line.textContent =
+      "Forking repository, pushing render.yaml, creating Render web service (this can take several minutes)…";
+    if (forkLine && provision.forkHtmlUrl) {
+      forkLine.textContent = `Fork: ${provision.forkHtmlUrl}`;
+      forkLine.classList.remove("hidden");
+    } else {
+      forkLine?.classList.add("hidden");
+    }
+    urlLine?.classList.add("hidden");
+    return;
+  }
+
+  line.textContent = "";
+  forkLine?.classList.add("hidden");
+  urlLine?.classList.add("hidden");
+}
+
 function isTerminalWorkflowStatus(wf) {
   const r = wf?.results;
   // Stop once output exists even if status string lags (e.g. paused → succeeded).
@@ -245,6 +328,14 @@ function shouldShowSpinner(statusRaw) {
   return ["running", "in_progress", "pending", "queued", "paused"].includes(s);
 }
 
+function workflowPollingDone(wf, provision) {
+  if (!isTerminalWorkflowStatus(wf)) return false;
+  const st = provision?.state;
+  if (st === null || st === undefined) return false;
+  if (st === "running") return false;
+  return true;
+}
+
 async function pollRun(runId) {
   const panel = document.getElementById("panel");
   if (panel) {
@@ -252,9 +343,10 @@ async function pollRun(runId) {
     panel.setAttribute("aria-busy", "true");
   }
 
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 240; i++) {
     const data = await getRun(runId);
     const wf = data.workflow;
+    const provision = data.provision;
     const errLine =
       wf.error == null
         ? ""
@@ -262,12 +354,15 @@ async function pollRun(runId) {
     const jsonBlock = renderWorkflowPayload(wf.results);
     renderPipelineTrace(extractTrace(wf.results));
 
+    renderProvisionPanel(provision);
+
+    const spin =
+      shouldShowSpinner(wf.status) || provision?.state === "running";
     setWorkflowChrome(wf.status, errLine, `${wf.status}\n${jsonBlock}`, {
-      showSpinner: shouldShowSpinner(wf.status),
+      showSpinner: spin,
     });
 
-    const done = isTerminalWorkflowStatus(wf);
-    if (done) {
+    if (workflowPollingDone(wf, provision)) {
       maybeShowPublishPanel();
       break;
     }
@@ -306,6 +401,7 @@ document.getElementById("form")?.addEventListener("submit", async (ev) => {
   document.getElementById("yaml-out")?.classList.add("hidden");
   document.getElementById("yaml-heading")?.classList.add("hidden");
   document.getElementById("publish-panel")?.classList.add("hidden");
+  document.getElementById("provision-panel")?.classList.add("hidden");
   hidePipelineTrace();
   const pubResult = document.getElementById("publish-result");
   if (pubResult) {

@@ -12,4 +12,13 @@ export async function migrate(sql: ReturnType<typeof postgres>): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
+  await sql`ALTER TABLE analysis_runs ADD COLUMN IF NOT EXISTS provision_state TEXT`;
+  await sql`ALTER TABLE analysis_runs ADD COLUMN IF NOT EXISTS provision_skip_reason TEXT`;
+  await sql`ALTER TABLE analysis_runs ADD COLUMN IF NOT EXISTS fork_owner TEXT`;
+  await sql`ALTER TABLE analysis_runs ADD COLUMN IF NOT EXISTS fork_repo TEXT`;
+  await sql`ALTER TABLE analysis_runs ADD COLUMN IF NOT EXISTS fork_html_url TEXT`;
+  await sql`ALTER TABLE analysis_runs ADD COLUMN IF NOT EXISTS fork_branch TEXT`;
+  await sql`ALTER TABLE analysis_runs ADD COLUMN IF NOT EXISTS render_service_id TEXT`;
+  await sql`ALTER TABLE analysis_runs ADD COLUMN IF NOT EXISTS deployed_url TEXT`;
+  await sql`ALTER TABLE analysis_runs ADD COLUMN IF NOT EXISTS provision_error TEXT`;
 }
