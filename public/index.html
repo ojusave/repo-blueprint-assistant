@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <div class="page-bg" aria-hidden="true"></div>
     <header class="top">
       <div class="brand">Repo Blueprint Assistant</div>
       <nav class="nav">
@@ -35,6 +36,7 @@
 
     <main class="main">
       <section class="hero">
+        <p class="eyebrow">Render Workflows</p>
         <h1>Public repo → Render blueprint</h1>
         <p class="lede">
           Paste a public GitHub repository. We scan it with Render Workflows (fan-out over
@@ -54,6 +56,7 @@
             href="https://render.com/docs/deploy-to-render-button"
             target="_blank"
             rel="noopener noreferrer"
+            class="deploy-img-wrap"
           >
             <img
               src="https://render.com/images/deploy-to-render-button.svg"
@@ -63,24 +66,38 @@
           </a>
         </div>
 
-        <form id="form" class="form">
-          <label for="repoUrl">Public GitHub repo</label>
-          <input
-            id="repoUrl"
-            name="repoUrl"
-            type="text"
-            placeholder="https://github.com/owner/repo or owner/repo"
-            autocomplete="off"
-            required
-          />
-          <button type="submit" class="btn btn-primary">Analyze</button>
-        </form>
+        <div class="input-card">
+          <form id="form" class="form">
+            <label for="repoUrl">Public GitHub repo</label>
+            <div class="input-row">
+              <input
+                id="repoUrl"
+                name="repoUrl"
+                type="text"
+                placeholder="https://github.com/owner/repo or owner/repo"
+                autocomplete="off"
+                required
+              />
+              <button type="submit" class="btn btn-primary" id="analyze-btn">
+                Analyze
+              </button>
+            </div>
+          </form>
+        </div>
       </section>
 
-      <section id="panel" class="panel hidden" aria-live="polite">
-        <h2>Run status</h2>
-        <pre id="status" class="mono"></pre>
-        <h3 id="yaml-heading" class="hidden">render.yaml</h3>
+      <section id="panel" class="panel hidden" aria-live="polite" aria-busy="false">
+        <div class="panel-head">
+          <h2>Run status</h2>
+          <span id="status-badge" class="badge badge-idle" hidden>—</span>
+        </div>
+        <p id="status-hint" class="status-hint"></p>
+        <div id="status-spinner" class="spinner-wrap hidden" aria-hidden="true">
+          <span class="spinner"></span>
+          <span class="spinner-label">Waiting for workflow…</span>
+        </div>
+        <pre id="status" class="mono status-pre"></pre>
+        <h3 id="yaml-heading" class="yaml-title hidden">render.yaml</h3>
         <pre id="yaml-out" class="mono yaml hidden"></pre>
         <div id="publish-panel" class="publish-panel hidden">
           <p class="publish-lede">

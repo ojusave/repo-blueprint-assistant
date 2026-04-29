@@ -58,6 +58,79 @@ function renderWorkflowPayload(results) {
   return JSON.stringify(results, null, 2);
 }
 
+function prettifyStatus(raw) {
+  const s = String(raw || "").replace(/_/g, " ");
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : "Unknown";
+}
+
+/** Map Render workflow status string to badge class + short label. */
+function badgeForStatus(raw) {
+  const s = String(raw || "").toLowerCase();
+  if (["succeeded", "completed", "success"].includes(s)) {
+    return { cls: "badge-done", label: "Succeeded" };
+  }
+  if (["failed", "failure"].includes(s)) {
+    return { cls: "badge-bad", label: "Failed" };
+  }
+  if (["canceled", "cancelled"].includes(s)) {
+    return { cls: "badge-idle", label: "Canceled" };
+  }
+  if (s === "paused") {
+    return { cls: "badge-paused", label: "Paused" };
+  }
+  if (["running", "in_progress", "pending", "queued"].includes(s)) {
+    return { cls: "badge-running", label: prettifyStatus(raw) };
+  }
+  return { cls: "badge-idle", label: prettifyStatus(raw) };
+}
+
+function hintForStatus(raw) {
+  const s = String(raw || "").toLowerCase();
+  if (s === "paused") {
+    return "This run is paused in Render. Open the workflow run in the Dashboard to see whether it can be resumed or why it stopped.";
+  }
+  if (["running", "in_progress", "pending", "queued"].includes(s)) {
+    return "Workflow is executing. Fan-out over package roots can take several minutes.";
+  }
+  if (["succeeded", "completed", "success"].includes(s)) {
+    return "Finished. Details below.";
+  }
+  if (["failed", "failure"].includes(s)) {
+    return "The workflow reported failure. See error details below.";
+  }
+  return "";
+}
+
+function setWorkflowChrome(statusRaw, errLine, jsonBlock, opts) {
+  const { showSpinner } = opts;
+  const badgeEl = document.getElementById("status-badge");
+  const hintEl = document.getElementById("status-hint");
+  const spinEl = document.getElementById("status-spinner");
+
+  const { cls, label } = badgeForStatus(statusRaw);
+  if (badgeEl) {
+    badgeEl.hidden = false;
+    badgeEl.className = `badge ${cls}`;
+    badgeEl.textContent = label;
+  }
+  if (hintEl) {
+    const extra = hintForStatus(statusRaw);
+    hintEl.textContent = errLine ? `${extra} ${errLine}`.trim() : extra;
+  }
+  if (spinEl) {
+    if (showSpinner) {
+      spinEl.classList.remove("hidden");
+    } else {
+      spinEl.classList.add("hidden");
+    }
+  }
+
+  const statusPre = document.getElementById("status");
+  if (statusPre) {
+    statusPre.textContent = jsonBlock;
+  }
+}
+
 function maybeShowPublishPanel() {
   const yamlOut = document.getElementById("yaml-out");
   const pub = document.getElementById("publish-panel");
@@ -66,10 +139,29 @@ function maybeShowPublishPanel() {
   pub.classList.remove("hidden");
 }
 
+function isTerminalWorkflowStatus(wf) {
+  const s = String(wf.status || "").toLowerCase();
+  return (
+    s === "paused" ||
+    s === "succeeded" ||
+    s === "completed" ||
+    s === "failed" ||
+    s === "canceled" ||
+    s === "cancelled"
+  );
+}
+
+function shouldShowSpinner(statusRaw) {
+  const s = String(statusRaw || "").toLowerCase();
+  return ["running", "in_progress", "pending", "queued"].includes(s);
+}
+
 async function pollRun(runId) {
-  const statusEl = document.getElementById("status");
   const panel = document.getElementById("panel");
-  if (panel) panel.classList.remove("hidden");
+  if (panel) {
+    panel.classList.remove("hidden");
+    panel.setAttribute("aria-busy", "true");
+  }
 
   for (let i = 0; i < 120; i++) {
     const data = await getRun(runId);
@@ -77,24 +169,22 @@ async function pollRun(runId) {
     const errLine =
       wf.error == null
         ? ""
-        : `error: ${typeof wf.error === "object" ? JSON.stringify(wf.error) : wf.error}\n`;
-    const line = `${wf.status}\n${errLine}`;
-    if (statusEl) {
-      statusEl.textContent =
-        line + "\n" + renderWorkflowPayload(wf.results);
-    }
+        : `(error: ${typeof wf.error === "object" ? JSON.stringify(wf.error) : wf.error})`;
+    const jsonBlock = renderWorkflowPayload(wf.results);
 
-    const done =
-      wf.status === "succeeded" ||
-      wf.status === "completed" ||
-      wf.status === "failed" ||
-      wf.status === "canceled";
+    setWorkflowChrome(wf.status, errLine, `${wf.status}\n${jsonBlock}`, {
+      showSpinner: shouldShowSpinner(wf.status),
+    });
+
+    const done = isTerminalWorkflowStatus(wf);
     if (done) {
       maybeShowPublishPanel();
       break;
     }
     await new Promise((res) => setTimeout(res, 2000));
   }
+
+  if (panel) panel.setAttribute("aria-busy", "false");
 }
 
 async function loadMeta() {
@@ -121,6 +211,7 @@ document.getElementById("form")?.addEventListener("submit", async (ev) => {
   const input = document.getElementById("repoUrl");
   const repoUrl = input?.value?.trim();
   if (!repoUrl) return;
+  const analyzeBtn = document.getElementById("analyze-btn");
   lastRunMeta = null;
   document.getElementById("yaml-out")?.classList.add("hidden");
   document.getElementById("yaml-heading")?.classList.add("hidden");
@@ -130,23 +221,42 @@ document.getElementById("form")?.addEventListener("submit", async (ev) => {
     pubResult.textContent = "";
     pubResult.classList.add("hidden");
   }
+  const badgeEl = document.getElementById("status-badge");
+  if (badgeEl) badgeEl.hidden = true;
+  document.getElementById("status-hint")?.textContent = "";
+  document.getElementById("status-spinner")?.classList.add("hidden");
+
   const statusEl = document.getElementById("status");
-  if (statusEl) statusEl.textContent = "Starting…";
+  if (statusEl) statusEl.textContent = "";
   document.getElementById("panel")?.classList.remove("hidden");
 
+  if (analyzeBtn) analyzeBtn.disabled = true;
+
   try {
+    setWorkflowChrome("queued", "", "Starting…", { showSpinner: true });
     const data = await postRun(repoUrl);
     lastRunMeta = {
       owner: data.owner,
       repo: data.repo,
       ref: data.ref,
     };
-    if (statusEl) {
-      statusEl.textContent = `Started run ${data.runId}\nPolling…`;
-    }
+    setWorkflowChrome("running", "", `Run ${data.runId}\nPolling…`, {
+      showSpinner: true,
+    });
     await pollRun(data.runId);
   } catch (e) {
-    if (statusEl) statusEl.textContent = e instanceof Error ? e.message : String(e);
+    if (badgeEl) {
+      badgeEl.hidden = false;
+      badgeEl.className = "badge badge-bad";
+      badgeEl.textContent = "Error";
+    }
+    document.getElementById("status-hint")?.textContent =
+      "Could not start or poll the workflow.";
+    if (statusEl) {
+      statusEl.textContent = e instanceof Error ? e.message : String(e);
+    }
+  } finally {
+    if (analyzeBtn) analyzeBtn.disabled = false;
   }
 });
 
