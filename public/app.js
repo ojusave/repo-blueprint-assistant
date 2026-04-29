@@ -379,10 +379,8 @@ async function loadMeta() {
     const gh = document.getElementById("link-github");
     if (gh && m.publicGithubRepo) gh.href = m.publicGithubRepo;
     const sn = document.getElementById("link-signup-nav");
-    const sh = document.getElementById("link-signup-hero");
     const sf = document.getElementById("link-signup-footer");
     if (sn && m.signupNavbar) sn.href = m.signupNavbar;
-    if (sh && m.signupHero) sh.href = m.signupHero;
     if (sf && m.signupFooter) sf.href = m.signupFooter;
     const gfx = document.getElementById("link-github-footer");
     if (gfx && m.publicGithubRepo) gfx.href = m.publicGithubRepo;
