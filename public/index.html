@@ -67,7 +67,8 @@
         </div>
 
         <div class="input-card">
-          <form id="form" class="form">
+          <!-- Default form method is GET: without preventDefault, submit navigates away (?repoUrl=…) and looks like a refresh. Inline preventDefault keeps SPA behavior even if the module fails to load. -->
+          <form id="form" class="form" onsubmit="event.preventDefault();">
             <label for="repoUrl">Public GitHub repo</label>
             <div class="input-row">
               <input
