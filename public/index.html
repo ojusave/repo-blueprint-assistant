@@ -84,8 +84,10 @@
         <pre id="yaml-out" class="mono yaml hidden"></pre>
         <div id="publish-panel" class="publish-panel hidden">
           <p class="publish-lede">
-            Push this YAML to a new branch on the same public repo (server needs
-            <code>GITHUB_TOKEN</code> with contents write).
+            Push this YAML to a new branch on the repo you analyzed. The server’s
+            <code>GITHUB_TOKEN</code> must already be allowed to push there (for example
+            fine-grained: same resource owner as the repo, All repositories + Contents
+            read/write). Random third-party repos will return 403.
           </p>
           <button type="button" id="publish-btn" class="btn btn-secondary">
             Push render.yaml to new branch

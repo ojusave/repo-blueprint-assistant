@@ -20,7 +20,18 @@ Operators deploy the **web** service from Blueprint, then attach a **Workflow** 
 
 1. Open the deployed site.
 2. Enter `https://github.com/owner/repo` or `owner/repo`.
-3. Wait for polling to finish; copy YAML or use **Push render.yaml to new branch** when the server has **`GITHUB_TOKEN`** with contents write (opens a branch such as `assistant/bpa-…`).
+3. Wait for polling to finish; copy YAML or use **Push render.yaml to new branch** when publishing is enabled (see **Publish scope** below).
+
+## Publish scope
+
+**Analyze** can target **any public** repository URL users paste. **Publish** is different: it uses **your** `GITHUB_TOKEN`, so GitHub only permits pushes where **that token’s identity already has push rights**. There is no way to configure one PAT at deploy time that can write to **every possible** `owner/repo` on GitHub.
+
+Practical setups:
+
+- **Repos owned by the same GitHub user or org as the token:** use a **fine-grained PAT** with **Resource owner** set to that account, **Repository access → All repositories** (so you do not need to list repos in advance), and **Contents → Read and write**. That covers any repo that account owns, without knowing user URLs ahead of time.
+- **Third-party repos** (someone else’s `owner/repo`): publish will fail with **403** unless that repo grants your token user push access (collaborator, org bot, etc.). A future fork-or-OAuth flow would be a separate feature.
+
+If you only need read-only scanning, omit publish or set **`BLUEPRINT_PUBLISH_ENABLED=false`**.
 
 ## HTTP API
 
@@ -99,7 +110,7 @@ Confirm **`analyze_repository`** appears (alongside other tasks). The web app ca
 | `DATABASE_URL` | Web | From Blueprint `fromDatabase` |
 | `RENDER_API_KEY` | Web | Invoke Render API (can be empty until set in Dashboard; app still starts) |
 | `WORKFLOW_SLUG` | Web | Dashboard workflow **service slug** (must match exactly; used as `{slug}/analyze_repository`) |
-| `GITHUB_TOKEN` | Web + Workflow | Rate limits; **`POST /api/publish`** needs a PAT that may **push** to the analyzed repo. **Fine-grained PAT:** do **not** stop at **Repository access → Public repositories** (that mode is **read-only**). Use **Only select repositories** (pick the repo) or **All repositories**, open **Repository permissions**, set **Contents** to **Read and write**. **Classic PAT:** **`repo`** scope. **Org repos:** authorize the PAT for **SSO** if required. Wrong scope or owner returns 403 (`Resource not accessible by personal access token`). |
+| `GITHUB_TOKEN` | Web + Workflow | Rate limits; **`POST /api/publish`** needs push-capable PAT for repos you target (see **Publish scope**). **Fine-grained:** avoid **Public repositories** (read-only); prefer **All repositories** on the token owner + **Contents: Read and write**, or **Only select repositories** if you want a narrow list. **Classic:** **`repo`**. **Org:** SSO authorize if required. |
 | `PUBLIC_GITHUB_REPO` | Web | Header + footer GitHub links |
 | `ANALYSIS_ENABLED` | Web | `"false"` disables `POST /api/runs` |
 | `BLUEPRINT_PUBLISH_ENABLED` | Web | `"false"` disables `POST /api/publish` |
