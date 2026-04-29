@@ -15,7 +15,7 @@ export class RenderWorkflowAdapter implements WorkflowTrigger {
     baseUrl?: string;
   }) {
     this.client = new Render({
-      token: opts.apiKey,
+      token: opts.apiKey?.trim() ? opts.apiKey : undefined,
       baseUrl: opts.baseUrl,
     });
     this.slug = opts.workflowSlug.replace(/\/$/, "");

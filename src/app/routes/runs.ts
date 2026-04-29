@@ -15,6 +15,13 @@ const bodySchema = z.object({
 
 const uuidSchema = z.string().uuid();
 
+function workflowReady(env: {
+  RENDER_API_KEY: string;
+  WORKFLOW_SLUG: string;
+}): boolean {
+  return Boolean(env.RENDER_API_KEY?.trim() && env.WORKFLOW_SLUG?.trim());
+}
+
 export function createRunsRouter(deps: {
   env: WebEnv;
   github: GitHubRepository;
@@ -35,6 +42,15 @@ export function createRunsRouter(deps: {
               "Analysis is disabled via ANALYSIS_ENABLED"
             )
           );
+        return;
+      }
+      if (!workflowReady(deps.env)) {
+        res.status(503).json(
+          fail(
+            "WORKFLOW_NOT_CONFIGURED",
+            "Set RENDER_API_KEY and WORKFLOW_SLUG in the web service environment (Dashboard), then redeploy or restart."
+          )
+        );
         return;
       }
       const parsed = bodySchema.safeParse(req.body);
@@ -85,6 +101,15 @@ export function createRunsRouter(deps: {
       const record = await deps.runs.getById(parsed.data);
       if (!record) {
         throw new AppError("NOT_FOUND", "Run not found", 404);
+      }
+      if (!workflowReady(deps.env)) {
+        res.status(503).json(
+          fail(
+            "WORKFLOW_NOT_CONFIGURED",
+            "Set RENDER_API_KEY and WORKFLOW_SLUG before polling workflow status."
+          )
+        );
+        return;
       }
       const wf = await deps.workflow.getTaskRun(record.taskRunId);
       res.json(ok({ record, workflow: wf }));

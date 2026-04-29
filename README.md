@@ -71,8 +71,8 @@ Confirm **`analyze_repository`** (and related tasks) appear. See [Intro to Rende
 | Variable | Service | Purpose |
 |----------|---------|---------|
 | `DATABASE_URL` | Web | From Blueprint `fromDatabase` |
-| `RENDER_API_KEY` | Web | Invoke Render API |
-| `WORKFLOW_SLUG` | Web | e.g. `my-workflow` |
+| `RENDER_API_KEY` | Web | Invoke Render API (can be empty until set in Dashboard; app still starts) |
+| `WORKFLOW_SLUG` | Web | e.g. `my-workflow` (same: optional until Workflow service exists) |
 | `GITHUB_TOKEN` | Web + Workflow | Higher GitHub rate limits |
 | `PUBLIC_GITHUB_REPO` | Web | Header + footer GitHub links |
 | `ANALYSIS_ENABLED` | Web | `"false"` disables `POST /api/runs` |
