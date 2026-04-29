@@ -60,7 +60,7 @@ async function main(): Promise<void> {
 
   app.use(errorHandler);
 
-  app.listen(env.PORT, () => {
+  app.listen(env.PORT, "0.0.0.0", () => {
     log.info({ port: env.PORT }, "web listening");
   });
 }

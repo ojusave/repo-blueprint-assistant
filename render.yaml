@@ -12,9 +12,10 @@ services:
     name: blueprint-assistant-web
     runtime: node
     plan: starter
-    # Do not set NODE_ENV=production in Blueprint env for the whole service: it breaks `npm ci`
-    # (devDependencies omitted → `tsc` missing → build fails). Use production only at runtime.
-    buildCommand: npm ci && npm run build
+    # Do not set NODE_ENV=production in Blueprint env for the whole service.
+    # Render may still inject NODE_ENV=production during build; plain `npm ci` then omits
+    # devDependencies (`tsc` missing). `--include=dev` forces dev deps even then.
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: NODE_ENV=production npm start
     healthCheckPath: /health
     previews:
