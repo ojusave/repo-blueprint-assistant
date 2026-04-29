@@ -9,6 +9,34 @@ const BASE = "https://api.github.com";
 
 type Opts = { token: string; timeoutMs: number };
 
+function mapGithubStatusToAppStatus(resStatus: number): number {
+  if (resStatus === 403) return 403;
+  if (resStatus === 404) return 404;
+  return 502;
+}
+
+/** Turn GitHub error bodies into a short message plus fix hints for common 403s. */
+function githubPublishFailureMessage(status: number, bodyText: string): string {
+  const snippet = bodyText.slice(0, 320).replace(/\s+/g, " ").trim();
+  if (status !== 403) {
+    return `GitHub ${status}: ${snippet}`;
+  }
+  let apiMessage = "";
+  try {
+    const j = JSON.parse(bodyText) as { message?: string };
+    apiMessage = j.message ?? "";
+  } catch {
+    /* ignore */
+  }
+  const notAccessible = apiMessage.includes(
+    "Resource not accessible by personal access token"
+  );
+  const hint = notAccessible
+    ? " Your token cannot write this repository. If you use a fine-grained PAT: add this repository under Repository access and set Permission: Contents to Read and write. If you use a classic PAT: enable the repo scope. For organization-owned repos, open the token on GitHub and click Authorize for SSO if your org requires it."
+    : " Confirm the token has push access (contents: write) to owner/repo and is not limited to other repositories only.";
+  return `GitHub 403: ${snippet}.${hint}`;
+}
+
 function encodeContentPath(path: string): string {
   return path
     .split("/")
@@ -52,8 +80,8 @@ export class GitHubPublishRestAdapter implements GitHubPublisher {
       if (!res.ok) {
         throw new AppError(
           "GITHUB_PUBLISH",
-          `GitHub ${res.status}: ${text.slice(0, 360)}`,
-          res.status === 403 ? 403 : res.status === 404 ? 404 : 502
+          githubPublishFailureMessage(res.status, text),
+          mapGithubStatusToAppStatus(res.status)
         );
       }
       return text.length ? (JSON.parse(text) as unknown) : {};
@@ -120,8 +148,8 @@ export class GitHubPublishRestAdapter implements GitHubPublisher {
       if (!res.ok) {
         throw new AppError(
           "GITHUB_PUBLISH",
-          `GitHub ${res.status}: ${text.slice(0, 360)}`,
-          502
+          githubPublishFailureMessage(res.status, text),
+          mapGithubStatusToAppStatus(res.status)
         );
       }
       const data = JSON.parse(text) as { sha?: string };

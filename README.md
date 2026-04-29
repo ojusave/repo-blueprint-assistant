@@ -99,7 +99,7 @@ Confirm **`analyze_repository`** appears (alongside other tasks). The web app ca
 | `DATABASE_URL` | Web | From Blueprint `fromDatabase` |
 | `RENDER_API_KEY` | Web | Invoke Render API (can be empty until set in Dashboard; app still starts) |
 | `WORKFLOW_SLUG` | Web | Dashboard workflow **service slug** (must match exactly; used as `{slug}/analyze_repository`) |
-| `GITHUB_TOKEN` | Web + Workflow | Rate limits; **`POST /api/publish`** needs a token with **`contents:write`** on the target repo |
+| `GITHUB_TOKEN` | Web + Workflow | Rate limits; **`POST /api/publish`** needs a PAT that may **push** to the analyzed repo (same owner as the URL you analyzed). **Fine-grained PAT:** under Repository access, include that repository; set **Contents** to **Read and write**. **Classic PAT:** **`repo`** scope. **Org repos:** authorize the PAT for **SSO** if the organization requires it. A read-only or wrong-repo token returns HTTP 403 from GitHub (`Resource not accessible by personal access token`). |
 | `PUBLIC_GITHUB_REPO` | Web | Header + footer GitHub links |
 | `ANALYSIS_ENABLED` | Web | `"false"` disables `POST /api/runs` |
 | `BLUEPRINT_PUBLISH_ENABLED` | Web | `"false"` disables `POST /api/publish` |
