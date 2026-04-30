@@ -14,6 +14,7 @@ import {
 } from "../../domain/pipeline-step-timer.js";
 import { analyzePackageSlice } from "./analyze-package-slice.js";
 import { detectBlueprint } from "./detect-blueprint.js";
+import { fetchRepoFileInsights } from "./fetch-repo-file-insights.js";
 import { fetchRepoSnapshot } from "./fetch-repo-snapshot.js";
 import { generateBlueprint } from "./generate-blueprint.js";
 import { planTargets } from "./plan-targets.js";
@@ -91,11 +92,26 @@ export const analyzeRepository = task(
       const merged = mergeSlices(slices, snapshot.paths);
       snapshotHints(snapshot.paths, merged);
 
+      const fileInsights = await runTraced(
+        trace,
+        "fetch_repo_file_insights",
+        "fetch_repo_file_insights",
+        async () =>
+          fetchRepoFileInsights({
+            ...input,
+            ...snapshot,
+            primarySliceRootPath: merged.primarySliceRootPath,
+          })
+      );
+
+      const inventory = { ...merged, fileInsights };
+
       const gen = await runTraced(
         trace,
         "generate_render_blueprint",
         "generate_render_blueprint",
-        async () => generateBlueprint(merged)
+        async () =>
+          generateBlueprint({ inventory, paths: snapshot.paths })
       );
 
       const validation = await runTraced(
@@ -107,7 +123,7 @@ export const analyzeRepository = task(
 
       return {
         status: "generated",
-        inventory: merged,
+        inventory,
         yaml: gen.yaml,
         validation,
         notes: gen.notes,

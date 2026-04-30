@@ -1,5 +1,23 @@
 import type { MergedInventory, PackageSlice } from "../contracts/analyze-repository-types.js";
 
+/** Prefer root when it has scripts; otherwise best-effort monorepo slice with build/start. */
+export function pickPrimarySlice(active: PackageSlice[]): PackageSlice | undefined {
+  if (active.length === 0) return undefined;
+  const root = active.find((s) => s.rootPath === ".");
+  if (root && (root.scripts?.build || root.scripts?.start)) {
+    return root;
+  }
+  const withBoth = active.find(
+    (s) => s.scripts?.build && s.scripts?.start
+  );
+  if (withBoth) return withBoth;
+  const withStart = active.find((s) => s.scripts?.start);
+  if (withStart) return withStart;
+  const withBuild = active.find((s) => s.scripts?.build);
+  if (withBuild) return withBuild;
+  return root ?? active[0];
+}
+
 /** Pick install command from repo root lockfiles (paths from GitHub snapshot). */
 export function inferNodeDepsInstall(paths: string[]): string {
   const hasFile = (name: string) =>
@@ -43,10 +61,16 @@ export function mergeSlices(
     return "unknown";
   };
 
-  const root =
-    active.find((s) => s.rootPath === ".") ?? active[0];
-  const scripts = root?.scripts;
-  const main = root?.main;
+  const primary = pickPrimarySlice(active);
+  const scripts = primary?.scripts;
+  const main = primary?.main;
+  const primarySliceRootPath = primary?.rootPath ?? ".";
+
+  const depKeySet = new Set<string>();
+  for (const s of active) {
+    for (const k of s.dependencyKeys ?? []) depKeySet.add(k);
+  }
+  const dependencyKeys = Array.from(depKeySet).sort();
 
   const runtime = guessRuntime();
   const hasPkg = paths.some((p) => p.endsWith("package.json"));
@@ -63,6 +87,8 @@ export function mergeSlices(
     scripts,
     main,
     nodeDepsInstall,
+    primarySliceRootPath,
+    dependencyKeys,
     warnings,
     slices: active,
   };

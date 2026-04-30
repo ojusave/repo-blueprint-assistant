@@ -33,6 +33,7 @@ export const analyzePackageSlice = task(
     let name: string | undefined;
     let main: string | undefined;
     let scripts: { build?: string; start?: string } | undefined;
+    let dependencyKeys: string[] | undefined;
     try {
       const raw = await gh.fetchFile(
         input.owner,
@@ -44,6 +45,8 @@ export const analyzePackageSlice = task(
         name?: string;
         main?: string;
         scripts?: { build?: string; start?: string };
+        dependencies?: Record<string, string>;
+        devDependencies?: Record<string, string>;
       };
       name = pkg.name;
       main =
@@ -54,6 +57,10 @@ export const analyzePackageSlice = task(
         build: pkg.scripts?.build,
         start: pkg.scripts?.start,
       };
+      const keys = new Set<string>();
+      for (const k of Object.keys(pkg.dependencies ?? {})) keys.add(k);
+      for (const k of Object.keys(pkg.devDependencies ?? {})) keys.add(k);
+      dependencyKeys = Array.from(keys).sort();
     } catch (e) {
       return {
         rootPath: input.rootPath,
@@ -76,6 +83,7 @@ export const analyzePackageSlice = task(
       name,
       main,
       scripts,
+      dependencyKeys,
       hasDockerfile,
     };
   }

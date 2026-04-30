@@ -15,4 +15,20 @@ describe("extractWebServiceFromBlueprintYaml", () => {
     expect(x.buildCommand).toBe("npm install");
     expect(x.startCommand).toBe("node app.js");
   });
+
+  it("ignores top-level databases block", () => {
+    const yaml = `databases:
+  - name: app-db
+    plan: basic-256mb
+services:
+  - type: web
+    name: app
+    runtime: node
+    buildCommand: "npm ci && npm run build"
+    startCommand: "node dist/index.js"
+`;
+    const x = extractWebServiceFromBlueprintYaml(yaml);
+    expect(x.buildCommand).toContain("npm ci");
+    expect(x.startCommand).toBe("node dist/index.js");
+  });
 });

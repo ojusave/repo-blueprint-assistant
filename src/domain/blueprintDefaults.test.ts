@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   composeRenderBuildCommand,
+  composeStartCommand,
   defaultBuildCommand,
   defaultStartCommand,
 } from "./blueprintDefaults.js";
@@ -11,6 +12,8 @@ function inv(p: Partial<MergedInventory>): MergedInventory {
     runtime: "node",
     hasPackageJson: true,
     hasDockerfile: false,
+    primarySliceRootPath: ".",
+    dependencyKeys: [],
     warnings: [],
     slices: [],
     ...p,
@@ -53,6 +56,18 @@ describe("composeRenderBuildCommand", () => {
       )
     ).toBe("npm ci --include=dev");
   });
+
+  it("wraps build in cd when primary slice is not repo root", () => {
+    expect(
+      composeRenderBuildCommand(
+        inv({
+          primarySliceRootPath: "apps/web",
+          scripts: { build: "vite build" },
+          nodeDepsInstall: "npm ci --include=dev",
+        })
+      )
+    ).toBe("npm ci --include=dev && cd apps/web && vite build");
+  });
 });
 
 describe("defaultBuildCommand", () => {
@@ -70,6 +85,19 @@ describe("defaultBuildCommand", () => {
         inv({ scripts: { start: "node app.js" }, hasPackageJson: true })
       )
     ).toBe("npm install");
+  });
+});
+
+describe("composeStartCommand", () => {
+  it("prefixes cd for non-root primary slice", () => {
+    expect(
+      composeStartCommand(
+        inv({
+          primarySliceRootPath: "packages/api",
+          scripts: { start: "node dist/index.js" },
+        })
+      )
+    ).toBe("cd packages/api && node dist/index.js");
   });
 });
 

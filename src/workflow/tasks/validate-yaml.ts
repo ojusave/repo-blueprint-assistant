@@ -27,6 +27,18 @@ export const validateBlueprintYaml = task(
       if (!Array.isArray(o.services)) {
         errors.push('Expected top-level "services" array.');
       }
+      if (o.databases !== undefined) {
+        if (!Array.isArray(o.databases)) {
+          errors.push('When present, "databases" must be an array.');
+        } else {
+          for (const row of o.databases) {
+            if (row === null || typeof row !== "object") {
+              errors.push("Each database entry must be an object.");
+              break;
+            }
+          }
+        }
+      }
     } catch (e) {
       errors.push(`YAML parse error: ${e instanceof Error ? e.message : String(e)}`);
     }
