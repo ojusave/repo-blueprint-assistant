@@ -189,20 +189,44 @@ function hintForStatus(raw) {
   return "";
 }
 
+function workflowSucceeded(raw) {
+  const s = String(raw || "").toLowerCase();
+  return ["succeeded", "completed", "success"].includes(s);
+}
+
+/** When analysis completes but fork/deploy fails, the workflow badge alone reads like full success. */
+function badgeAndHintForRun(workflowStatusRaw, provision) {
+  const base = badgeForStatus(workflowStatusRaw);
+  let hint = hintForStatus(workflowStatusRaw);
+  if (
+    workflowSucceeded(workflowStatusRaw) &&
+    provision &&
+    provision.state === "failed"
+  ) {
+    return {
+      cls: "badge-warn",
+      label: "Partial",
+      hint:
+        "Analysis finished; blueprint is below. Fork & deploy failed: check that section and Render logs.",
+    };
+  }
+  return { cls: base.cls, label: base.label, hint };
+}
+
 function setWorkflowChrome(statusRaw, errLine, jsonBlock, opts) {
-  const { showSpinner } = opts;
+  const { showSpinner, provision } = opts;
   const badgeEl = document.getElementById("status-badge");
   const hintEl = document.getElementById("status-hint");
   const spinEl = document.getElementById("status-spinner");
 
-  const { cls, label } = badgeForStatus(statusRaw);
+  const { cls, label, hint } = badgeAndHintForRun(statusRaw, provision);
   if (badgeEl) {
     badgeEl.hidden = false;
     badgeEl.className = `badge ${cls}`;
     badgeEl.textContent = label;
   }
   if (hintEl) {
-    const extra = hintForStatus(statusRaw);
+    const extra = hint;
     hintEl.textContent = errLine ? `${extra} ${errLine}`.trim() : extra;
   }
   if (spinEl) {
@@ -244,6 +268,19 @@ function provisionSkipHint(reason) {
   return m[reason] ?? `Fork/deploy skipped (${reason}).`;
 }
 
+function hideProvisionDashboard() {
+  document.getElementById("provision-dashboard-line")?.classList.add("hidden");
+}
+
+/** When deploy fails after service creation, Render’s GET deploy payload has no log body; link to Dashboard. */
+function showProvisionDashboard(serviceId) {
+  const wrap = document.getElementById("provision-dashboard-line");
+  const a = document.getElementById("provision-dashboard-link");
+  if (!wrap || !a || !serviceId) return;
+  a.href = `https://dashboard.render.com/web/${encodeURIComponent(serviceId)}`;
+  wrap.classList.remove("hidden");
+}
+
 /** Shows fork → Render deploy progress from GET /api/runs/:id provision envelope. */
 function renderProvisionPanel(provision) {
   const panel = document.getElementById("provision-panel");
@@ -262,6 +299,7 @@ function renderProvisionPanel(provision) {
 
   if (!hasAny) {
     panel.classList.add("hidden");
+    hideProvisionDashboard();
     return;
   }
 
@@ -271,6 +309,7 @@ function renderProvisionPanel(provision) {
     line.textContent = provisionSkipHint(provision.skipReason);
     forkLine?.classList.add("hidden");
     urlLine?.classList.add("hidden");
+    hideProvisionDashboard();
     return;
   }
 
@@ -278,12 +317,18 @@ function renderProvisionPanel(provision) {
     line.textContent = `Fork/deploy failed: ${provision.error}`;
     forkLine?.classList.add("hidden");
     urlLine?.classList.add("hidden");
+    if (provision.renderServiceId) {
+      showProvisionDashboard(provision.renderServiceId);
+    } else {
+      hideProvisionDashboard();
+    }
     return;
   }
 
   if (provision.state === "done" && provision.deployedUrl) {
     line.textContent = "Deployed on Render.";
     forkLine?.classList.add("hidden");
+    hideProvisionDashboard();
     if (urlLine && urlLink) {
       urlLink.href = provision.deployedUrl;
       urlLink.textContent = provision.deployedUrl;
@@ -295,6 +340,7 @@ function renderProvisionPanel(provision) {
   if (provision.state === "running") {
     line.textContent =
       "Forking repository, pushing render.yaml, creating Render web service (this can take several minutes)…";
+    hideProvisionDashboard();
     if (forkLine && provision.forkHtmlUrl) {
       forkLine.textContent = `Fork: ${provision.forkHtmlUrl}`;
       forkLine.classList.remove("hidden");
@@ -308,6 +354,7 @@ function renderProvisionPanel(provision) {
   line.textContent = "";
   forkLine?.classList.add("hidden");
   urlLine?.classList.add("hidden");
+  hideProvisionDashboard();
 }
 
 function isTerminalWorkflowStatus(wf) {
@@ -366,6 +413,7 @@ async function pollRun(runId) {
       shouldShowSpinner(wf.status) || provision?.state === "running";
     setWorkflowChrome(wf.status, errLine, `${wf.status}\n${jsonBlock}`, {
       showSpinner: spin,
+      provision,
     });
 
     if (workflowPollingDone(wf, provision)) {

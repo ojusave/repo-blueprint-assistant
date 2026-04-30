@@ -279,6 +279,13 @@ code {
   background: rgba(245, 194, 107, 0.1);
 }
 
+/* Workflow OK but fork/deploy failed: avoid implying the whole run succeeded. */
+.badge-warn {
+  color: var(--warn);
+  border-color: rgba(245, 194, 107, 0.5);
+  background: rgba(245, 194, 107, 0.1);
+}
+
 .badge-done {
   color: var(--ok);
   border-color: rgba(74, 222, 128, 0.45);
@@ -490,6 +497,17 @@ code {
   color: var(--muted);
   max-width: 62ch;
   line-height: 1.45;
+}
+
+.provision-dashboard {
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  max-width: 62ch;
+  line-height: 1.45;
+}
+
+.provision-dashboard .muted {
+  color: var(--muted);
 }
 
 .provision-fork {

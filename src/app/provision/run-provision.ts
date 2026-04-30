@@ -9,6 +9,7 @@ import type { GitHubFork } from "../../ports/github-fork.js";
 import type { RunStore } from "../../ports/analysis-run-store.js";
 import type { GitHubPublishRestAdapter } from "../../infra/github-http-publish.js";
 import type { RenderDeployRestAdapter } from "../../infra/render-http-deploy.js";
+import { deployTerminalGuidance } from "../../domain/deployTerminalGuidance.js";
 import type { Logger } from "pino";
 
 const DEPLOY_POLL_MS = 4000;
@@ -41,7 +42,9 @@ async function waitForDeployLive(
       st === "canceled" ||
       st === "pre_deploy_failed"
     ) {
-      throw new Error(`Deploy ended with status: ${st}`);
+      throw new Error(
+        `Deploy ended with status: ${st}. ${deployTerminalGuidance(st)}`
+      );
     }
     await sleep(DEPLOY_POLL_MS);
   }
