@@ -430,10 +430,25 @@ async function loadMeta() {
   try {
     const m = await fetchMeta();
     metaPublishAvailable = m.publishAvailable === true;
-    const gh = document.getElementById("link-github");
-    if (gh && m.publicGithubRepo) gh.href = m.publicGithubRepo;
+    const repoUrl = m.publicGithubRepo;
+    if (repoUrl) {
+      for (const id of ["link-github", "link-github-footer"]) {
+        const el = document.getElementById(id);
+        if (el) el.href = repoUrl;
+      }
+    }
+    if (m.deployBlueprintUrl) {
+      for (const id of ["link-deploy-nav", "link-deploy-hero", "link-deploy-footer"]) {
+        const el = document.getElementById(id);
+        if (el) el.href = m.deployBlueprintUrl;
+      }
+    }
     const sn = document.getElementById("link-signup-nav");
     if (sn && m.signupNavbar) sn.href = m.signupNavbar;
+    const sh = document.getElementById("link-signup-hero");
+    if (sh && m.signupHero) sh.href = m.signupHero;
+    const sf = document.getElementById("link-signup-footer");
+    if (sf && m.signupFooter) sf.href = m.signupFooter;
   } catch {
     /* non-fatal */
   }

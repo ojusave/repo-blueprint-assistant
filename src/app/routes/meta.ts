@@ -6,9 +6,12 @@ import { renderSignupUrlWithUtms } from "../renderSignup.js";
 export function createMetaRouter(env: WebEnv): Router {
   const r = Router();
   r.get("/api/meta", (_req, res) => {
+    const repo = env.PUBLIC_GITHUB_REPO;
     res.json(
       ok({
-        publicGithubRepo: env.PUBLIC_GITHUB_REPO,
+        publicGithubRepo: repo,
+        /** Blueprint one-click deploy for this repository. */
+        deployBlueprintUrl: `https://render.com/deploy?repo=${encodeURIComponent(repo)}`,
         signupNavbar: renderSignupUrlWithUtms("navbar_button"),
         signupHero: renderSignupUrlWithUtms("hero_cta"),
         signupFooter: renderSignupUrlWithUtms("footer_link"),

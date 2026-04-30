@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Repo Blueprint Assistant</title>
     <link rel="icon" href="https://render.com/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/dds/styles/globals.css" />
     <link rel="stylesheet" href="/dds/styles/theme.css" />
     <link rel="stylesheet" href="./styles.css" />
@@ -12,123 +18,191 @@
   <body>
     <div class="page-bg" aria-hidden="true"></div>
     <header class="top">
-      <div class="brand">Repo Blueprint Assistant</div>
-      <nav class="nav">
+      <div class="shell-inner top-inner">
+        <div class="brand">
+          <img
+            class="brand-mark"
+            src="https://render.com/favicon.ico"
+            width="22"
+            height="22"
+            alt=""
+          />
+          <span class="brand-text">Repo Blueprint Assistant</span>
+        </div>
+        <nav class="nav" aria-label="Primary">
+          <a
+            id="link-deploy-nav"
+            class="nav-highlight"
+            href="https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fojusave%2Frepo-blueprint-assistant"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Deploy</a
+          >
+          <a
+            id="link-github"
+            href="https://github.com/ojusave/repo-blueprint-assistant"
+            target="_blank"
+            rel="noopener noreferrer"
+            >GitHub</a
+          >
+          <a
+            id="link-signup-nav"
+            href="https://dashboard.render.com/register?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=ojus_demos&amp;utm_content=navbar_button"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Sign up</a
+          >
+          <a href="https://render.com/docs" target="_blank" rel="noopener noreferrer">Docs</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="shell-inner">
+        <section class="hero">
+          <p class="eyebrow">
+            <a
+              class="eyebrow-link"
+              href="https://render.com/docs/workflows"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Render Workflows</a
+            >
+          </p>
+          <h1>Blueprint from a public GitHub repo</h1>
+          <p class="lede">
+            Paste any public repository URL. A workflow on Render inspects it through the GitHub
+            API: if <code>render.yaml</code> is already there, you see it; if not, you get a starter
+            blueprint inferred from the tree (multi-package layouts included).
+          </p>
+
+          <div class="hero-actions">
+            <a
+              id="link-deploy-hero"
+              class="btn btn-ghost"
+              href="https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fojusave%2Frepo-blueprint-assistant"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Deploy to Render</a
+            >
+            <a
+              id="link-signup-hero"
+              class="btn btn-ghost btn-ghost-accent"
+              href="https://dashboard.render.com/register?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=ojus_demos&amp;utm_content=hero_cta"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Sign up on Render</a
+            >
+          </div>
+
+          <div class="input-card">
+            <!-- Default form method is GET: without preventDefault, submit navigates away (?repoUrl=…) and looks like a refresh. Inline preventDefault keeps SPA behavior even if the module fails to load. -->
+            <form id="form" class="form" onsubmit="event.preventDefault();">
+              <label for="repoUrl">Public GitHub repo</label>
+              <div class="input-row">
+                <input
+                  id="repoUrl"
+                  name="repoUrl"
+                  type="text"
+                  placeholder="https://github.com/owner/repo or owner/repo"
+                  autocomplete="off"
+                  required
+                />
+                <button type="submit" class="btn btn-primary" id="analyze-btn">
+                  Analyze
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section id="panel" class="panel hidden" aria-live="polite" aria-busy="false">
+          <div class="panel-head">
+            <h2>Run status</h2>
+            <span id="status-badge" class="badge badge-idle" hidden>—</span>
+          </div>
+          <p id="status-hint" class="status-hint"></p>
+          <div id="status-spinner" class="spinner-wrap hidden" aria-hidden="true">
+            <span class="spinner"></span>
+            <span class="spinner-label">Waiting for workflow…</span>
+          </div>
+          <pre id="status" class="mono status-pre"></pre>
+          <div
+            id="pipeline-trace"
+            class="pipeline-trace hidden"
+            aria-label="Backend pipeline steps"
+          ></div>
+          <h3 id="yaml-heading" class="yaml-title hidden">render.yaml</h3>
+          <pre id="yaml-out" class="mono yaml hidden"></pre>
+          <div id="provision-panel" class="provision-panel hidden">
+            <h3 class="provision-title">Fork &amp; deploy</h3>
+            <p id="provision-line" class="provision-line"></p>
+            <p id="provision-dashboard-line" class="provision-dashboard hidden">
+              <a
+                id="provision-dashboard-link"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Open service in Render Dashboard</a
+              >
+              <span class="muted"> for deploy/build logs (exact error is there).</span>
+            </p>
+            <p id="provision-fork-line" class="mono provision-fork hidden"></p>
+            <p id="provision-url-line" class="provision-url hidden">
+              <a
+                id="provision-url-link"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Live URL</a
+              >
+            </p>
+          </div>
+          <div id="publish-panel" class="publish-panel hidden">
+            <p class="publish-lede">
+              Push this YAML to a new branch on the repo you analyzed. The server’s
+              <code>GITHUB_TOKEN</code> must already be allowed to push there (for example
+              fine-grained: same resource owner as the repo, All repositories + Contents
+              read/write). Random third-party repos will return 403.
+            </p>
+            <button type="button" id="publish-btn" class="btn btn-secondary">
+              Push render.yaml to new branch
+            </button>
+            <pre id="publish-result" class="mono publish-result hidden"></pre>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell-inner footer-inner">
         <a
-          id="link-github"
-          href="https://github.com/"
+          id="link-github-footer"
+          href="https://github.com/ojusave/repo-blueprint-assistant"
           target="_blank"
           rel="noopener noreferrer"
-          >GitHub repository</a
+          >Repository</a
         >
+        <span class="footer-dot" aria-hidden="true">·</span>
         <a
-          id="link-signup-nav"
-          href="https://dashboard.render.com/register"
+          id="link-deploy-footer"
+          href="https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fojusave%2Frepo-blueprint-assistant"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Deploy to Render</a
+        >
+        <span class="footer-dot" aria-hidden="true">·</span>
+        <a
+          id="link-signup-footer"
+          href="https://dashboard.render.com/register?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=ojus_demos&amp;utm_content=footer_link"
           target="_blank"
           rel="noopener noreferrer"
           >Sign up on Render</a
         >
-        <a href="https://render.com/docs" target="_blank" rel="noopener noreferrer"
-          >Docs</a
-        >
-      </nav>
-    </header>
-
-    <main class="main">
-      <section class="hero">
-        <p class="eyebrow">
-          <a
-            class="eyebrow-link"
-            href="https://render.com/docs/workflows"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Render Workflows</a
-          >
-        </p>
-        <h1>Blueprint from a public GitHub repo</h1>
-        <p class="lede">
-          Paste any public repository URL. A workflow on Render inspects it through the GitHub
-          API: if <code>render.yaml</code> is already there, you see it; if not, you get a starter
-          blueprint inferred from the tree (multi-package layouts included).
-        </p>
-
-        <div class="input-card">
-          <!-- Default form method is GET: without preventDefault, submit navigates away (?repoUrl=…) and looks like a refresh. Inline preventDefault keeps SPA behavior even if the module fails to load. -->
-          <form id="form" class="form" onsubmit="event.preventDefault();">
-            <label for="repoUrl">Public GitHub repo</label>
-            <div class="input-row">
-              <input
-                id="repoUrl"
-                name="repoUrl"
-                type="text"
-                placeholder="https://github.com/owner/repo or owner/repo"
-                autocomplete="off"
-                required
-              />
-              <button type="submit" class="btn btn-primary" id="analyze-btn">
-                Analyze
-              </button>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      <section id="panel" class="panel hidden" aria-live="polite" aria-busy="false">
-        <div class="panel-head">
-          <h2>Run status</h2>
-          <span id="status-badge" class="badge badge-idle" hidden>—</span>
-        </div>
-        <p id="status-hint" class="status-hint"></p>
-        <div id="status-spinner" class="spinner-wrap hidden" aria-hidden="true">
-          <span class="spinner"></span>
-          <span class="spinner-label">Waiting for workflow…</span>
-        </div>
-        <pre id="status" class="mono status-pre"></pre>
-        <div
-          id="pipeline-trace"
-          class="pipeline-trace hidden"
-          aria-label="Backend pipeline steps"
-        ></div>
-        <h3 id="yaml-heading" class="yaml-title hidden">render.yaml</h3>
-        <pre id="yaml-out" class="mono yaml hidden"></pre>
-        <div id="provision-panel" class="provision-panel hidden">
-          <h3 class="provision-title">Fork &amp; deploy</h3>
-          <p id="provision-line" class="provision-line"></p>
-          <p id="provision-dashboard-line" class="provision-dashboard hidden">
-            <a
-              id="provision-dashboard-link"
-              href="#"
-              target="_blank"
-              rel="noopener noreferrer"
-              >Open service in Render Dashboard</a
-            >
-            <span class="muted"> for deploy/build logs (exact error is there).</span>
-          </p>
-          <p id="provision-fork-line" class="mono provision-fork hidden"></p>
-          <p id="provision-url-line" class="provision-url hidden">
-            <a
-              id="provision-url-link"
-              href="#"
-              target="_blank"
-              rel="noopener noreferrer"
-              >Live URL</a
-            >
-          </p>
-        </div>
-        <div id="publish-panel" class="publish-panel hidden">
-          <p class="publish-lede">
-            Push this YAML to a new branch on the repo you analyzed. The server’s
-            <code>GITHUB_TOKEN</code> must already be allowed to push there (for example
-            fine-grained: same resource owner as the repo, All repositories + Contents
-            read/write). Random third-party repos will return 403.
-          </p>
-          <button type="button" id="publish-btn" class="btn btn-secondary">
-            Push render.yaml to new branch
-          </button>
-          <pre id="publish-result" class="mono publish-result hidden"></pre>
-        </div>
-      </section>
-    </main>
+        <span class="footer-dot" aria-hidden="true">·</span>
+        <a href="https://render.com/docs" target="_blank" rel="noopener noreferrer">Docs</a>
+      </div>
+    </footer>
 
     <script type="module" src="./app.js"></script>
   </body>
