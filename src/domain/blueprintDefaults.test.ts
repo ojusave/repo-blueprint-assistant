@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { defaultBuildCommand, defaultStartCommand } from "./blueprintDefaults.js";
+import {
+  composeRenderBuildCommand,
+  defaultBuildCommand,
+  defaultStartCommand,
+} from "./blueprintDefaults.js";
 import type { MergedInventory } from "../contracts/analyze-repository-types.js";
 
 function inv(p: Partial<MergedInventory>): MergedInventory {
@@ -12,6 +16,44 @@ function inv(p: Partial<MergedInventory>): MergedInventory {
     ...p,
   };
 }
+
+describe("composeRenderBuildCommand", () => {
+  it("prepends npm ci with dev deps when package-lock and vite-style build", () => {
+    expect(
+      composeRenderBuildCommand(
+        inv({
+          scripts: { build: "vite build && cp x y" },
+          nodeDepsInstall: "npm ci --include=dev",
+        })
+      )
+    ).toBe("npm ci --include=dev && vite build && cp x y");
+  });
+
+  it("prepends pnpm install when inventory says so", () => {
+    expect(
+      composeRenderBuildCommand(
+        inv({
+          scripts: { build: "vite build" },
+          nodeDepsInstall:
+            "corepack enable && pnpm install --frozen-lockfile",
+        })
+      )
+    ).toBe(
+      "corepack enable && pnpm install --frozen-lockfile && vite build"
+    );
+  });
+
+  it("collapses duplicate npm install when there is no build script", () => {
+    expect(
+      composeRenderBuildCommand(
+        inv({
+          scripts: { start: "node app.js" },
+          nodeDepsInstall: "npm ci --include=dev",
+        })
+      )
+    ).toBe("npm ci --include=dev");
+  });
+});
 
 describe("defaultBuildCommand", () => {
   it("uses explicit build script", () => {

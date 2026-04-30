@@ -33,6 +33,11 @@ export type MergedInventory = {
   scripts?: { build?: string; start?: string };
   /** Root package.json `main` when present */
   main?: string;
+  /**
+   * Install step prepended to buildCommand on Render so devDependencies (e.g. vite, tsc)
+   * exist when NODE_ENV=production would otherwise omit them.
+   */
+  nodeDepsInstall?: string;
   warnings: string[];
   slices: PackageSlice[];
 };

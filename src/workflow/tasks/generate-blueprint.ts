@@ -1,7 +1,7 @@
 import { task } from "@renderinc/sdk/workflows";
 import type { MergedInventory } from "../../contracts/analyze-repository-types.js";
 import {
-  defaultBuildCommand,
+  composeRenderBuildCommand,
   defaultStartCommand,
 } from "../../domain/blueprintDefaults.js";
 
@@ -31,11 +31,14 @@ export const generateBlueprint = task(
     if (inventory.runtime === "unknown") {
       notes.push("Runtime not inferred; using node web placeholder.");
     }
-    const buildCmd = defaultBuildCommand(inventory);
+    const buildCmd = composeRenderBuildCommand(inventory);
     const startCmd = defaultStartCommand(inventory);
+    notes.push(
+      "buildCommand starts with a package-manager install that includes devDependencies (vite, TypeScript, etc.) so Render builds do not fail with command not found."
+    );
     if (!inventory.scripts?.build && inventory.hasPackageJson) {
       notes.push(
-        'No npm "build" script: using `npm install` as buildCommand (install deps before start).'
+        'No npm "build" script: using install-only step as buildCommand (deps before start).'
       );
     }
     if (!inventory.scripts?.start) {

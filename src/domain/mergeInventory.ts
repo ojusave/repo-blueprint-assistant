@@ -1,5 +1,22 @@
 import type { MergedInventory, PackageSlice } from "../contracts/analyze-repository-types.js";
 
+/** Pick install command from repo root lockfiles (paths from GitHub snapshot). */
+export function inferNodeDepsInstall(paths: string[]): string {
+  const hasFile = (name: string) =>
+    paths.some((p) => p === name || p.endsWith(`/${name}`));
+
+  if (hasFile("pnpm-lock.yaml") || hasFile("pnpm-lock.yml")) {
+    return "corepack enable && pnpm install --frozen-lockfile";
+  }
+  if (hasFile("yarn.lock")) {
+    return "yarn install --frozen-lockfile";
+  }
+  if (hasFile("package-lock.json") || hasFile("npm-shrinkwrap.json")) {
+    return "npm ci --include=dev";
+  }
+  return "npm install --include=dev";
+}
+
 /** Fan-in: combine per-root slices into one inventory for blueprint generation. */
 export function mergeSlices(
   slices: PackageSlice[],
@@ -31,15 +48,21 @@ export function mergeSlices(
   const scripts = root?.scripts;
   const main = root?.main;
 
+  const runtime = guessRuntime();
+  const hasPkg = paths.some((p) => p.endsWith("package.json"));
+  const nodeDepsInstall =
+    runtime === "node" || hasPkg ? inferNodeDepsInstall(paths) : undefined;
+
   return {
-    runtime: guessRuntime(),
-    hasPackageJson: paths.some((p) => p.endsWith("package.json")),
+    runtime,
+    hasPackageJson: hasPkg,
     hasDockerfile:
       paths.some(
         (p) => p.endsWith("Dockerfile") || p.endsWith("dockerfile")
       ) || active.some((s) => s.hasDockerfile),
     scripts,
     main,
+    nodeDepsInstall,
     warnings,
     slices: active,
   };
