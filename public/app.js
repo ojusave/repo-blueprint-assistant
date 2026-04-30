@@ -164,7 +164,7 @@ function badgeForStatus(raw) {
   }
   // API may report "paused" briefly or while results finalize; keep polling — do not treat as terminal success/failure.
   if (s === "paused") {
-    return { cls: "badge-running", label: "Working…" };
+    return { cls: "badge-running", label: "In progress" };
   }
   if (["running", "in_progress", "pending", "queued"].includes(s)) {
     return { cls: "badge-running", label: prettifyStatus(raw) };
@@ -172,19 +172,10 @@ function badgeForStatus(raw) {
   return { cls: "badge-idle", label: prettifyStatus(raw) };
 }
 
-/** First line inside #status <pre>: plain API word “paused” reads like a stop; explain it. */
-function workflowStatusPrelude(raw) {
-  const s = String(raw || "").toLowerCase();
-  if (s === "paused") {
-    return 'In progress (Render task status: paused — not final until results appear below).';
-  }
-  return String(raw || "");
-}
-
 function hintForStatus(raw) {
   const s = String(raw || "").toLowerCase();
   if (s === "paused") {
-    return 'Same moment as “Working” above: Render’s API can say paused while the task is still finishing. Still polling…';
+    return "Render may report paused before results attach; still polling.";
   }
   if (["running", "in_progress", "pending", "queued"].includes(s)) {
     return "Workflow is executing. Fan-out over package roots can take several minutes.";
@@ -373,7 +364,7 @@ async function pollRun(runId) {
 
     const spin =
       shouldShowSpinner(wf.status) || provision?.state === "running";
-    setWorkflowChrome(wf.status, errLine, `${workflowStatusPrelude(wf.status)}\n${jsonBlock}`, {
+    setWorkflowChrome(wf.status, errLine, `${wf.status}\n${jsonBlock}`, {
       showSpinner: spin,
     });
 
