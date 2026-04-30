@@ -37,11 +37,11 @@
     <main class="main">
       <section class="hero">
         <p class="eyebrow">Render Workflows</p>
-        <h1>Public repo → Render blueprint</h1>
+        <h1>Blueprint from a public GitHub repo</h1>
         <p class="lede">
-          Paste a public GitHub repository. We scan it with Render Workflows (fan-out over
-          package roots), detect an existing <code>render.yaml</code>, or generate a starter
-          blueprint.
+          Paste any public repository URL. A workflow on Render inspects it through the GitHub
+          API: if <code>render.yaml</code> is already there, you see it; if not, you get a starter
+          blueprint inferred from the tree (multi-package layouts included).
         </p>
 
         <div class="input-card">
