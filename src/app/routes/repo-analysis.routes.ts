@@ -1,56 +1,27 @@
 /**
- * Analysis runs API: start Render Workflow task for `analyze_repository`, poll task status,
- * and (when results are terminal) optionally dispatch fork + push + Render web service create.
- *
- * Flow: POST /api/runs → GET /api/runs/:id (polled by UI). Each GET loads workflow state from
- * Render, runs maybeDispatchProvision once per run when provision_state is still null, then
- * returns record + workflow + provision envelope for the client.
+ * Analysis runs API: POST /api/runs, GET /api/runs/:id (workflow + provision envelope).
  */
 import { Router } from "express";
 import { z } from "zod";
 import type { WebEnv } from "../../config/env.js";
-import { parseAnalyzeRepositoryOutcome } from "../../domain/workflowResult.js";
 import { ok, fail } from "../../domain/apiEnvelope.js";
 import { AppError } from "../../domain/errors.js";
 import { parseRepoInput } from "../../domain/parseRepoUrl.js";
-import { runForkDeployProvision } from "../provision/run-provision.js";
-import type { GitHubPublishRestAdapter } from "../../infra/github-http-publish.js";
-import type { RenderDeployRestAdapter } from "../../infra/render-http-deploy.js";
-import type { GitHubFork } from "../../ports/github-fork.js";
-import type { GitHubRepository } from "../../ports/read-github-repo.js";
 import type { RunStore } from "../../ports/analysis-run-store.js";
+import type { GitHubFork } from "../../ports/github-fork.js";
+import type { GitHubPublisher } from "../../ports/publish-github-branch.js";
+import type { GitHubRepository } from "../../ports/read-github-repo.js";
+import type { RenderDeploy } from "../../ports/render-deploy.js";
 import type { WorkflowTrigger } from "../../ports/render-workflow-client.js";
 import type { Logger } from "pino";
+import { maybeDispatchProvision } from "./analysis-run-provision-dispatch.js";
+import { workflowReady } from "./analysis-run-workflow.js";
 
 const bodySchema = z.object({
   repoUrl: z.string().min(4),
 });
 
 const uuidSchema = z.string().uuid();
-
-function workflowReady(env: {
-  RENDER_API_KEY: string;
-  WORKFLOW_SLUG: string;
-}): boolean {
-  return Boolean(env.RENDER_API_KEY?.trim() && env.WORKFLOW_SLUG?.trim());
-}
-
-function isWorkflowTerminalStatus(statusRaw: string | undefined): boolean {
-  const s = String(statusRaw || "").toLowerCase();
-  return (
-    s === "succeeded" ||
-    s === "completed" ||
-    s === "success" ||
-    s === "failed" ||
-    s === "canceled" ||
-    s === "cancelled"
-  );
-}
-
-function isWorkflowFailedStatus(statusRaw: string | undefined): boolean {
-  const s = String(statusRaw || "").toLowerCase();
-  return s === "failed" || s === "canceled" || s === "cancelled";
-}
 
 export function createRunsRouter(deps: {
   env: WebEnv;
@@ -59,87 +30,10 @@ export function createRunsRouter(deps: {
   runs: RunStore;
   log: Logger;
   fork: GitHubFork | null;
-  publisher: GitHubPublishRestAdapter | null;
-  deploy: RenderDeployRestAdapter | null;
+  publisher: GitHubPublisher | null;
+  deploy: RenderDeploy | null;
 }): Router {
   const r = Router();
-
-  /**
-   * When the workflow has finished and Postgres shows no provision decision yet, classify the
-   * task result and either skip fork/deploy (existing yaml, error, missing env) or fire
-   * runForkDeployProvision in the background (single winner via tryBeginProvision).
-   */
-  async function maybeDispatchProvision(
-    runId: string,
-    wf: {
-      status?: string;
-      results?: unknown;
-    }
-  ): Promise<void> {
-    const record = await deps.runs.getById(runId);
-    if (!record || record.provisionState !== null) return;
-
-    const st = wf.status;
-    if (!isWorkflowTerminalStatus(st)) return;
-
-    if (isWorkflowFailedStatus(st)) {
-      await deps.runs.markProvisionSkipped(runId, "analysis_error");
-      return;
-    }
-
-    const outcome = parseAnalyzeRepositoryOutcome(wf.results);
-    if (outcome.kind === "running") return;
-
-    if (outcome.kind === "existing_blueprint") {
-      await deps.runs.markProvisionSkipped(runId, "existing_blueprint");
-      return;
-    }
-
-    if (outcome.kind === "error") {
-      await deps.runs.markProvisionSkipped(runId, "analysis_error");
-      return;
-    }
-
-    if (outcome.kind !== "generated") return;
-
-    if (!deps.env.AUTO_DEPLOY_ENABLED) {
-      await deps.runs.markProvisionSkipped(runId, "auto_deploy_disabled");
-      return;
-    }
-
-    if (!deps.env.RENDER_OWNER_ID?.trim()) {
-      await deps.runs.markProvisionSkipped(runId, "no_render_owner");
-      return;
-    }
-
-    if (!deps.publisher || !deps.fork) {
-      await deps.runs.markProvisionSkipped(runId, "no_github_token");
-      return;
-    }
-
-    if (!deps.deploy) {
-      await deps.runs.markProvisionSkipped(runId, "no_render_deploy");
-      return;
-    }
-
-    const began = await deps.runs.tryBeginProvision(runId);
-    if (!began) return;
-
-    void runForkDeployProvision({
-      env: deps.env,
-      runs: deps.runs,
-      fork: deps.fork,
-      publisher: deps.publisher,
-      deploy: deps.deploy,
-      log: deps.log,
-      runId,
-      yaml: outcome.yaml,
-      upstreamOwner: record.owner,
-      upstreamRepo: record.repo,
-    }).catch((e) => {
-      deps.log.error({ runId, err: e }, "provision_unhandled");
-    });
-  }
 
   r.post("/api/runs", async (req, res, next) => {
     try {
@@ -223,7 +117,7 @@ export function createRunsRouter(deps: {
       }
       const wf = await deps.workflow.getTaskRun(record.taskRunId);
 
-      await maybeDispatchProvision(record.id, wf);
+      await maybeDispatchProvision(deps, record.id, wf);
 
       const refreshed = await deps.runs.getById(record.id);
       res.json(

@@ -87,6 +87,7 @@ repo-blueprint-assistant/
       read-github-repo.ts           # Port: tree + file + default branch (read)
       publish-github-branch.ts      # Port: push blueprint YAML to a branch (write)
       render-workflow-client.ts     # Port: startTask, getTaskRun
+      render-deploy.ts              # Port: POST /services, deploy poll, service URL
       analysis-run-store.ts        # Port: persist analysis run rows (Postgres)
     infra/
       github-http-read.ts           # Adapter: GitHub REST read + timeouts
@@ -186,6 +187,7 @@ Not in YAML until Blueprint supports Workflow type.
 | GitHub REST | `GitHubRepository` | `GitHubRestAdapter` | Throw typed `AppError` → HTTP 502 / workflow error result | **Yes** for analysis path |
 | Render Workflows API | `WorkflowTrigger` | `RenderWorkflowAdapter` | `AppError` / 503 if misconfigured | **Yes** to start runs |
 | Postgres | `RunStore` | `PostgresRunStore` | 503 if DB down on write; log | **Yes** for persistence |
+| Render REST (services/deploys) | `RenderDeploy` | `RenderDeployRestAdapter` | `AppError` / message persisted on `failProvision` | **Yes** when auto-deploy runs |
 | YAML parse | N/A (stdlib `yaml`) | inline in validate task | validation errors non-throwing | Yes for correctness |
 | `@renderinc/sdk` workflows | Inside Workflow adapter boundary only on web; tasks use SDK task API | N/A | — | — |
 | `pino` logger | `Logger` port (optional thin wrapper) | `pino` implementation | never throws | Non-critical |

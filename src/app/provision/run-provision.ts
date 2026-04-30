@@ -6,9 +6,9 @@
 import type { WebEnv } from "../../config/env.js";
 import { extractWebServiceFromBlueprintYaml } from "../../domain/parseGeneratedBlueprint.js";
 import type { GitHubFork } from "../../ports/github-fork.js";
+import type { GitHubPublisher } from "../../ports/publish-github-branch.js";
 import type { RunStore } from "../../ports/analysis-run-store.js";
-import type { GitHubPublishRestAdapter } from "../../infra/github-http-publish.js";
-import type { RenderDeployRestAdapter } from "../../infra/render-http-deploy.js";
+import type { RenderDeploy } from "../../ports/render-deploy.js";
 import { deployTerminalGuidance } from "../../domain/deployTerminalGuidance.js";
 import type { Logger } from "pino";
 
@@ -26,7 +26,7 @@ async function sleep(ms: number): Promise<void> {
 
 /** Polls GET .../deploys/:deployId until status is terminal (live or failure). */
 async function waitForDeployLive(
-  deploy: RenderDeployRestAdapter,
+  deploy: RenderDeploy,
   serviceId: string,
   deployId: string,
   log: Logger
@@ -74,8 +74,8 @@ export async function runForkDeployProvision(opts: {
   env: WebEnv;
   runs: RunStore;
   fork: GitHubFork;
-  publisher: GitHubPublishRestAdapter;
-  deploy: RenderDeployRestAdapter;
+  publisher: GitHubPublisher;
+  deploy: RenderDeploy;
   log: Logger;
   runId: string;
   yaml: string;

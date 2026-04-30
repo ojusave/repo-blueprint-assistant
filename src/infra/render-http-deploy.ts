@@ -4,6 +4,12 @@
  * provision uses fetch directly to /v1/services.
  */
 import { AppError } from "../domain/errors.js";
+import type {
+  CreateWebServiceResult,
+  DeployStatusPayload,
+  RenderDeploy,
+  ServiceDetailsPayload,
+} from "../ports/render-deploy.js";
 
 type Opts = {
   apiKey: string;
@@ -19,7 +25,7 @@ function normalizeBase(base: string): string {
 /**
  * Minimal Render REST client for POST /services and deploy polling (not exposed by Render SDK workflows facade).
  */
-export class RenderDeployRestAdapter {
+export class RenderDeployRestAdapter implements RenderDeploy {
   constructor(private readonly opts: Opts) {}
 
   private async req<T>(
@@ -75,26 +81,24 @@ export class RenderDeployRestAdapter {
     }
   }
 
-  async createWebService(body: Record<string, unknown>): Promise<{
-    service?: { id?: string; serviceDetails?: { url?: string } };
-    deployId?: string;
-  }> {
-    return this.req("POST", "/services", body);
+  async createWebService(
+    body: Record<string, unknown>
+  ): Promise<CreateWebServiceResult> {
+    return this.req<CreateWebServiceResult>("POST", "/services", body);
   }
 
-  async getDeploy(serviceId: string, deployId: string): Promise<{
-    status?: string;
-  }> {
-    return this.req(
+  async getDeploy(
+    serviceId: string,
+    deployId: string
+  ): Promise<DeployStatusPayload> {
+    return this.req<DeployStatusPayload>(
       "GET",
       `/services/${encodeURIComponent(serviceId)}/deploys/${encodeURIComponent(deployId)}`
     );
   }
 
-  async getService(serviceId: string): Promise<{
-    serviceDetails?: { url?: string };
-  }> {
-    return this.req(
+  async getService(serviceId: string): Promise<ServiceDetailsPayload> {
+    return this.req<ServiceDetailsPayload>(
       "GET",
       `/services/${encodeURIComponent(serviceId)}`
     );
