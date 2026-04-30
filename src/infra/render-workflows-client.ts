@@ -81,6 +81,7 @@ export class RenderWorkflowAdapter implements WorkflowTrigger {
       const details = await this.client.workflows.getTaskRun(taskRunId);
       return {
         id: details.id,
+        taskId: details.taskId,
         status: String(details.status),
         results: details.results as unknown[] | undefined,
         error: details.error,

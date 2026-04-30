@@ -7,9 +7,12 @@ export function createMetaRouter(env: WebEnv): Router {
   const r = Router();
   r.get("/api/meta", (_req, res) => {
     const repo = env.PUBLIC_GITHUB_REPO;
+    const wfSlug = env.WORKFLOW_SLUG?.trim().replace(/\/$/, "") ?? "";
     res.json(
       ok({
         publicGithubRepo: repo,
+        /** Full task path used for repo analysis (for UI labels when polling). */
+        analyzeRepositoryTask: wfSlug.length > 0 ? `${wfSlug}/analyze_repository` : null,
         /** Blueprint one-click deploy for this repository. */
         deployBlueprintUrl: `https://render.com/deploy?repo=${encodeURIComponent(repo)}`,
         signupNavbar: renderSignupUrlWithUtms("navbar_button"),

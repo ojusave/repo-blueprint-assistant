@@ -7,6 +7,8 @@ import { fetchMeta, getRun, postPublish, postRun } from "./api.js";
 /** Set after POST /api/runs so publish can target the same repo + base branch. */
 let lastRunMeta = null;
 let metaPublishAvailable = false;
+/** From GET /api/meta: `WORKFLOW_SLUG/analyze_repository` for UI copy when taskId is missing. */
+let metaAnalyzeRepositoryTask = "";
 
 function renderYaml(text) {
   const y = document.getElementById("yaml-out");
@@ -172,19 +174,33 @@ function badgeForStatus(raw) {
   return { cls: "badge-idle", label: prettifyStatus(raw) };
 }
 
-function hintForStatus(raw) {
+/** Prefer API taskId when it looks like a slug; else configured analyzeRepositoryTask from meta. */
+function resolveTaskLabel(taskId, configuredSlug) {
+  const id = typeof taskId === "string" ? taskId.trim() : "";
+  if (id.includes("/")) return id;
+  const cfg = typeof configuredSlug === "string" ? configuredSlug.trim() : "";
+  if (cfg.length > 0) return cfg;
+  if (id.length > 0) return id;
+  return "analyze_repository";
+}
+
+function hintForStatus(raw, taskLabel) {
   const s = String(raw || "").toLowerCase();
+  const task = taskLabel || "analyze_repository";
   if (s === "paused") {
-    return "Render may report paused before results attach; still polling.";
+    return `${task}: Render may report paused before results attach; still polling.`;
   }
-  if (["running", "in_progress", "pending", "queued"].includes(s)) {
-    return "Workflow is executing. Fan-out over package roots can take several minutes.";
+  if (s === "queued") {
+    return `Queued: ${task}. Waiting for Render Workflows to start this task.`;
+  }
+  if (["running", "in_progress", "pending"].includes(s)) {
+    return `Running ${task}. Fan-out over package roots can take several minutes.`;
   }
   if (["succeeded", "completed", "success"].includes(s)) {
-    return "Finished. Details below.";
+    return `Finished (${task}). Details below.`;
   }
   if (["failed", "failure"].includes(s)) {
-    return "The workflow reported failure. See error details below.";
+    return `${task} reported failure. See error details below.`;
   }
   return "";
 }
@@ -195,9 +211,9 @@ function workflowSucceeded(raw) {
 }
 
 /** When analysis completes but fork/deploy fails, the workflow badge alone reads like full success. */
-function badgeAndHintForRun(workflowStatusRaw, provision) {
+function badgeAndHintForRun(workflowStatusRaw, provision, taskLabel) {
   const base = badgeForStatus(workflowStatusRaw);
-  let hint = hintForStatus(workflowStatusRaw);
+  let hint = hintForStatus(workflowStatusRaw, taskLabel);
   if (
     workflowSucceeded(workflowStatusRaw) &&
     provision &&
@@ -214,12 +230,22 @@ function badgeAndHintForRun(workflowStatusRaw, provision) {
 }
 
 function setWorkflowChrome(statusRaw, errLine, jsonBlock, opts) {
-  const { showSpinner, provision } = opts;
+  const { showSpinner, provision, taskLabel } = opts;
   const badgeEl = document.getElementById("status-badge");
   const hintEl = document.getElementById("status-hint");
   const spinEl = document.getElementById("status-spinner");
+  const spinLabelEl = document.getElementById("status-spinner-label");
 
-  const { cls, label, hint } = badgeAndHintForRun(statusRaw, provision);
+  const labelStr =
+    taskLabel ||
+    metaAnalyzeRepositoryTask ||
+    "analyze_repository";
+
+  const { cls, label, hint } = badgeAndHintForRun(
+    statusRaw,
+    provision,
+    labelStr
+  );
   if (badgeEl) {
     badgeEl.hidden = false;
     badgeEl.className = `badge ${cls}`;
@@ -232,6 +258,9 @@ function setWorkflowChrome(statusRaw, errLine, jsonBlock, opts) {
   if (spinEl) {
     if (showSpinner) {
       spinEl.classList.remove("hidden");
+      if (spinLabelEl) {
+        spinLabelEl.textContent = `Waiting on ${labelStr}…`;
+      }
     } else {
       spinEl.classList.add("hidden");
     }
@@ -411,9 +440,12 @@ async function pollRun(runId) {
 
     const spin =
       shouldShowSpinner(wf.status) || provision?.state === "running";
-    setWorkflowChrome(wf.status, errLine, `${wf.status}\n${jsonBlock}`, {
+    const taskLabel = resolveTaskLabel(wf.taskId, metaAnalyzeRepositoryTask);
+    const statusBlock = `${wf.status} · ${taskLabel}\n${jsonBlock}`;
+    setWorkflowChrome(wf.status, errLine, statusBlock, {
       showSpinner: spin,
       provision,
+      taskLabel,
     });
 
     if (workflowPollingDone(wf, provision)) {
@@ -430,6 +462,10 @@ async function loadMeta() {
   try {
     const m = await fetchMeta();
     metaPublishAvailable = m.publishAvailable === true;
+    metaAnalyzeRepositoryTask =
+      typeof m.analyzeRepositoryTask === "string"
+        ? m.analyzeRepositoryTask
+        : "";
     const repoUrl = m.publicGithubRepo;
     if (repoUrl) {
       for (const id of ["link-github", "link-github-footer"]) {
@@ -484,7 +520,10 @@ document.getElementById("form")?.addEventListener("submit", async (ev) => {
   if (analyzeBtn) analyzeBtn.disabled = true;
 
   try {
-    setWorkflowChrome("queued", "", "Starting…", { showSpinner: true });
+    setWorkflowChrome("queued", "", "Starting…", {
+      showSpinner: true,
+      taskLabel: resolveTaskLabel(undefined, metaAnalyzeRepositoryTask),
+    });
     const data = await postRun(repoUrl);
     lastRunMeta = {
       owner: data.owner,
@@ -493,6 +532,7 @@ document.getElementById("form")?.addEventListener("submit", async (ev) => {
     };
     setWorkflowChrome("running", "", `Run ${data.runId}\nPolling…`, {
       showSpinner: true,
+      taskLabel: resolveTaskLabel(undefined, metaAnalyzeRepositoryTask),
     });
     await pollRun(data.runId);
   } catch (e) {

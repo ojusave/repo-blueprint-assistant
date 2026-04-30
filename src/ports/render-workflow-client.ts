@@ -9,6 +9,8 @@ export type WorkflowTrigger = {
 
   getTaskRun(taskRunId: string): Promise<{
     id: string;
+    /** Task identifier from Render (often `workflowSlug/taskName`). */
+    taskId?: string;
     status: string;
     results?: unknown[];
     error?: string;
