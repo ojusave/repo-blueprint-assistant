@@ -31,8 +31,6 @@
 - **Optional manual push:** **`POST /api/publish`** opens a branch on **the repo you analyzed** if your token has push access (different from fork/deploy).
 - **Kill switches:** `ANALYSIS_ENABLED`, `BLUEPRINT_PUBLISH_ENABLED`, `AUTO_DEPLOY_ENABLED`.
 
-Design history for this codebase lives in [`DESIGN.md`](DESIGN.md).
-
 ---
 
 ## Overview
